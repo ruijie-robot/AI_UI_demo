@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宏观数据助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 主内容区域（左侧） */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* 窗口2：基金经理持仓 */
+        .holdings-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .window-header {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .window-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .manager-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .manager-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+
+        .manager-details h3 {
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+
+        .manager-details p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .holdings-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .holdings-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .holdings-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .holdings-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .holding-item {
+            background: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .holding-item.gold {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .holding-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .holding-item.active {
+            border-left-width: 6px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .holding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .holding-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1em;
+        }
+
+        .holding-code {
+            color: #64748b;
+            font-size: 0.85em;
+            margin-top: 2px;
+        }
+
+        .holding-change {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .holding-change.up {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .holding-change.down {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .holding-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7em;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95em;
+        }
+
+        .holding-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .holding-tag.gold-tag {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* 窗口3：宏观新闻 */
+        .news-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .news-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .news-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .news-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .news-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .news-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #1e3c72;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .news-item:hover {
+            background: #f1f5f9;
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .news-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1.05em;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .news-date {
+            color: #94a3b8;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .news-content {
+            color: #475569;
+            line-height: 1.7;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .news-source {
+            color: #94a3b8;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .news-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .empty-news {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .empty-news-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        /* 窗口1：Chat侧边栏（右侧） */
+        .chat-sidebar {
+            width: 420px;
+            background: white;
+            box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-bubble {
+            background: white;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .quick-examples {
+            padding: 15px 20px;
+            background: #fffbeb;
+            border-top: 1px solid #fef3c7;
+        }
+
+        .quick-examples-title {
+            font-size: 0.85em;
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .example-chip {
+            background: white;
+            border: 1px solid #fbbf24;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            color: #78350f;
+            text-align: left;
+            margin-bottom: 8px;
+        }
+
+        .example-chip:hover {
+            background: #fef3c7;
+            transform: translateX(5px);
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 2px solid #e2e8f0;
+            background: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            min-height: 80px;
+            max-height: 150px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .send-btn {
+            padding: 0 24px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #1e3c72;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .loading-indicator.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #1e3c72;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .chat-sidebar {
+                width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .chat-sidebar {
+                width: 100%;
+                height: 50vh;
+            }
+
+            .main-content {
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 主内容区域（左侧） -->
+        <div class="main-content">
+            <!-- 窗口2：基金经理持仓 -->
+            <div class="holdings-window">
+                <div class="window-header">
+                    <div class="window-title">💼 基金经理持仓</div>
+                </div>
+
+                <div class="manager-info">
+                    <div class="manager-avatar">👨‍💼</div>
+                    <div class="manager-details">
+                        <h3>张明 - 资深基金经理</h3>
+                        <p>管理规模：85亿元 | 从业年限：12年</p>
+                    </div>
+                </div>
+
+                <div class="holdings-list">
+                    <div class="holding-item gold active" onclick="selectHolding(this, 'gold')">
+                        <div class="holding-header">
+                            <div>
+                                <div class="holding-name">中金黄金</div>
+                                <div class="holding-code">600489.SH</div>
+                            </div>
+                            <div class="holding-change up">+3.25%</div>
+                        </div>
+                        <div class="holding-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">持仓市值</div>
+                                <div class="stat-value">8.5亿</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">占比</div>
+                                <div class="stat-value">10.0%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">成本价</div>
+                                <div class="stat-value">12.35</div>
+                            </div>
+                        </div>
+                        <span class="holding-tag gold-tag">贵金属</span>
+                    </div>
+
+                    <div class="holding-item" onclick="selectHolding(this, 'kweichow')">
+                        <div class="holding-header">
+                            <div>
+                                <div class="holding-name">贵州茅台</div>
+                                <div class="holding-code">600519.SH</div>
+                            </div>
+                            <div class="holding-change up">+1.58%</div>
+                        </div>
+                        <div class="holding-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">持仓市值</div>
+                                <div class="stat-value">12.8亿</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">占比</div>
+                                <div class="stat-value">15.1%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">成本价</div>
+                                <div class="stat-value">1685.20</div>
+                            </div>
+                        </div>
+                        <span class="holding-tag">消费</span>
+                    </div>
+
+                    <div class="holding-item" onclick="selectHolding(this, 'catl')">
+                        <div class="holding-header">
+                            <div>
+                                <div class="holding-name">宁德时代</div>
+                                <div class="holding-code">300750.SZ</div>
+                            </div>
+                            <div class="holding-change down">-2.15%</div>
+                        </div>
+                        <div class="holding-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">持仓市值</div>
+                                <div class="stat-value">10.2亿</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">占比</div>
+                                <div class="stat-value">12.0%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">成本价</div>
+                                <div class="stat-value">185.60</div>
+                            </div>
+                        </div>
+                        <span class="holding-tag">新能源</span>
+                    </div>
+
+                    <div class="holding-item" onclick="selectHolding(this, 'icbc')">
+                        <div class="holding-header">
+                            <div>
+                                <div class="holding-name">工商银行</div>
+                                <div class="holding-code">601398.SH</div>
+                            </div>
+                            <div class="holding-change up">+0.85%</div>
+                        </div>
+                        <div class="holding-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">持仓市值</div>
+                                <div class="stat-value">9.5亿</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">占比</div>
+                                <div class="stat-value">11.2%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">成本价</div>
+                                <div class="stat-value">5.28</div>
+                            </div>
+                        </div>
+                        <span class="holding-tag">金融</span>
+                    </div>
+
+                    <div class="holding-item" onclick="selectHolding(this, 'china-mobile')">
+                        <div class="holding-header">
+                            <div>
+                                <div class="holding-name">中国移动</div>
+                                <div class="holding-code">600941.SH</div>
+                            </div>
+                            <div class="holding-change up">+1.20%</div>
+                        </div>
+                        <div class="holding-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">持仓市值</div>
+                                <div class="stat-value">7.8亿</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">占比</div>
+                                <div class="stat-value">9.2%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">成本价</div>
+                                <div class="stat-value">88.50</div>
+                            </div>
+                        </div>
+                        <span class="holding-tag">通信</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 窗口3：宏观新闻 -->
+            <div class="news-window">
+                <div class="window-header">
+                    <div class="window-title">📰 最新宏观新闻</div>
+                </div>
+                <div class="news-list" id="newsList">
+                    <!-- 默认显示黄金相关新闻 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 窗口1：Chat侧边栏（右侧） -->
+        <div class="chat-sidebar">
+            <div class="chat-header">
+                <h2>💬 宏观分析助手</h2>
+                <p>智能解读宏观经济数据</p>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        <div>您好！我是宏观数据分析助手。请告诉我您关心的宏观经济问题，我将为您提供专业分析。</div>
+                        <div class="message-time">刚刚</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-examples">
+                <div class="quick-examples-title">💡 快速示例</div>
+                <div class="example-chip" onclick="useExample(this)">
+                    如果特朗普继续强行扩大财政赤字，会对黄金造成什么影响？
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <span>AI正在分析...</span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea class="chat-input" id="chatInput"
+                              placeholder="输入您的宏观经济问题...&#10;（按Ctrl+Enter发送）"
+                              rows="3"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 宏观新闻数据库
+        const newsDatabase = {
+            'gold': [
+                {
+                    title: '美国财政赤字创40年新高，黄金避险属性凸显',
+                    content: '美国财政部数据显示，2024财年联邦政府预算赤字达到1.83万亿美元，占GDP比重超过6.5%，创1980年代以来新高。分析人士指出，持续扩大的财政赤字将削弱美元信用，推动黄金等避险资产价格上涨。',
+                    source: '华尔街日报',
+                    date: '2024-12-18',
+                    tag: '财政政策'
+                },
+                {
+                    title: '全球央行持续增持黄金储备，中国央行连续14个月净买入',
+                    content: '世界黄金协会最新报告显示，2024年前11个月全球央行净购买黄金超过1000吨，创历史新高。中国人民银行已连续14个月增持黄金储备，累计增持超过300吨，黄金储备占外汇储备比重提升至4.2%。',
+                    source: '新华财经',
+                    date: '2024-12-15',
+                    tag: '央行政策'
+                },
+                {
+                    title: '美联储维持利率不变，贵金属市场迎来配置窗口',
+                    content: 'FOMC会议决定维持联邦基金利率在5.25%-5.50%区间不变，鲍威尔表示2025年可能降息2-3次。市场预期利率见顶，实际利率下行趋势明确，利好黄金等无息资产表现。',
+                    source: '路透社',
+                    date: '2024-12-14',
+                    tag: '货币政策'
+                },
+                {
+                    title: '地缘政治风险升温，国际金价突破2100美元/盎司',
+                    content: '中东局势持续紧张，乌克兰危机未见缓解迹象，避险情绪推动国际金价突破2100美元/盎司关口，创历史新高。机构预测，在地缘政治不确定性持续的背景下，黄金有望继续上行。',
+                    source: '彭博社',
+                    date: '2024-12-12',
+                    tag: '地缘政治'
+                }
+            ],
+            'kweichow': [
+                {
+                    title: '高端白酒消费复苏，茅台提价预期增强',
+                    content: '市场调研显示，春节前高端白酒需求旺盛，茅台批价稳步上涨至2950元/瓶。业内预计茅台集团2025年可能上调出厂价，支撑股价表现。',
+                    source: '证券时报',
+                    date: '2024-12-16',
+                    tag: '消费'
+                },
+                {
+                    title: '消费刺激政策持续加码，酒类板块受益',
+                    content: '国务院常务会议研究部署进一步扩大内需政策措施，包括发放消费券、促进商品以旧换新等。高端消费品作为内需重要组成部分有望受益。',
+                    source: '经济参考报',
+                    date: '2024-12-13',
+                    tag: '政策'
+                }
+            ],
+            'catl': [
+                {
+                    title: '新能源汽车产销数据超预期，动力电池需求旺盛',
+                    content: '中汽协数据显示，11月新能源汽车产销分别完成107.4万辆和102.6万辆，同比增长35.9%和37.2%。宁德时代市占率维持在43%以上。',
+                    source: '中国证券报',
+                    date: '2024-12-11',
+                    tag: '新能源'
+                },
+                {
+                    title: '欧美电动车关税担忧缓解，出口订单回升',
+                    content: '欧盟表示将重新评估对中国电动车的反补贴税措施，美国新任政府能源政策存在调整可能。动力电池出口压力有望缓解。',
+                    source: '财新网',
+                    date: '2024-12-09',
+                    tag: '国际贸易'
+                }
+            ],
+            'icbc': [
+                {
+                    title: '央行下调存款准备金率，银行股估值修复',
+                    content: '中国人民银行宣布下调金融机构存款准备金率0.5个百分点，释放长期流动性约1万亿元。政策利好银行股估值修复，大型银行受益明显。',
+                    source: '上海证券报',
+                    date: '2024-12-17',
+                    tag: '货币政策'
+                },
+                {
+                    title: '银行业息差企稳，资产质量持续改善',
+                    content: '三季度上市银行净息差降幅收窄，部分银行息差环比企稳。不良贷款率继续下降，拨备覆盖率保持在200%以上。',
+                    source: '中国银行保险报',
+                    date: '2024-12-10',
+                    tag: '金融'
+                }
+            ],
+            'china-mobile': [
+                {
+                    title: '5G应用加速渗透，运营商业绩稳健增长',
+                    content: '工信部数据显示，5G基站总数达337.7万个，5G用户普及率超50%。三大运营商前三季度营收同比增长3.5%，利润增长8.2%。',
+                    source: '通信产业报',
+                    date: '2024-12-08',
+                    tag: '通信'
+                },
+                {
+                    title: '算力需求爆发，运营商布局AI数据中心',
+                    content: '在AI大模型训练需求推动下，三大运营商加快算力基础设施建设。中国移动计划三年投资1000亿元建设智算中心。',
+                    source: '21世纪经济报道',
+                    date: '2024-12-05',
+                    tag: 'AI算力'
+                }
+            ]
+        };
+
+        let currentHolding = 'gold';
+
+        // 初始化显示黄金相关新闻
+        window.onload = function() {
+            showNews('gold');
+        };
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('user', message);
+            input.value = '';
+
+            // 显示加载状态
+            document.getElementById('loadingIndicator').classList.add('show');
+            document.getElementById('sendBtn').disabled = true;
+
+            // 模拟AI回复
+            setTimeout(() => {
+                let reply = '';
+
+                // 判断是否是示例问题
+                if (message.includes('特朗普') && message.includes('财政赤字') && message.includes('黄金')) {
+                    reply = '财政赤字扩大意味着美国政府债务规模激增，这会削弱美元的信用底色。作为"抗通胀"和"反法币"的终极资产，黄金在赤字扩张周期内通常表现强劲。\n\n从历史数据看：\n• 2008-2012年金融危机期间，美国债务/GDP从60%升至100%，黄金从$800涨至$1900，涨幅超130%\n• 2020-2021年疫情刺激，债务率突破120%，金价从$1500涨至$2070\n\n当前建议：\n✓ 配置5-10%黄金类资产作为组合压舱石\n✓ 关注中金黄金(600489)等A股黄金股\n✓ 跟踪美国实际利率变化作为交易信号';
+                } else {
+                    reply = '感谢您的提问。我已为您分析相关宏观数据。您可以点击左侧持仓列表查看对应的最新宏观新闻。';
+                }
+
+                addMessage('assistant', reply);
+
+                document.getElementById('loadingIndicator').classList.remove('show');
+                document.getElementById('sendBtn').disabled = false;
+            }, 1500);
+        }
+
+        // 添加消息
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
+                          now.getMinutes().toString().padStart(2, '0');
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div style="white-space: pre-wrap;">${content}</div>
+                    <div class="message-time">${timeStr}</div>
+                </div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 使用示例
+        function useExample(element) {
+            const text = element.textContent;
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        // 选择持仓
+        function selectHolding(element, holdingId) {
+            // 移除所有active状态
+            document.querySelectorAll('.holding-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // 添加当前active状态
+            element.classList.add('active');
+
+            // 显示对应新闻
+            currentHolding = holdingId;
+            showNews(holdingId);
+        }
+
+        // 显示新闻
+        function showNews(holdingId) {
+            const newsList = document.getElementById('newsList');
+            const news = newsDatabase[holdingId] || [];
+
+            if (news.length === 0) {
+                newsList.innerHTML = `
+                    <div class="empty-news">
+                        <div class="empty-news-icon">📰</div>
+                        <h3>暂无新闻</h3>
+                        <p>该板块暂无最新宏观新闻</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            news.forEach((item, index) => {
+                html += `
+                    <div class="news-item" style="animation-delay: ${index * 0.1}s">
+                        <div class="news-header">
+                            <div class="news-title">${item.title}</div>
+                            <div class="news-date">${item.date}</div>
+                        </div>
+                        <div class="news-content">${item.content}</div>
+                        <div class="news-source">
+                            <span class="news-tag">${item.tag}</span>
+                            <span>📰 ${item.source}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            newsList.innerHTML = html;
+        }
+
+        // 支持Ctrl+Enter发送
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

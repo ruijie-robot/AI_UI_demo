@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组合模拟回测系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 主内容区域（左侧） */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* 窗口2：折线图 */
+        .chart-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .window-header {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .window-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #f8fafc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            cursor: crosshair;
+            border-radius: 8px;
+        }
+
+        .chart-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .click-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+        }
+
+        .chart-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            pointer-events: none;
+        }
+
+        /* 窗口3：新闻列表 */
+        .news-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .news-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .news-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .news-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .news-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .news-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .news-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .news-item:hover {
+            background: #f1f5f9;
+            transform: translateX(5px);
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .news-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1.05em;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .news-date {
+            color: #94a3b8;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .news-content {
+            color: #475569;
+            line-height: 1.7;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .news-source {
+            color: #94a3b8;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .news-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .empty-news {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .empty-news-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        /* 窗口1：Chat侧边栏（右侧） */
+        .chat-sidebar {
+            width: 420px;
+            background: white;
+            box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-bubble {
+            background: white;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .quick-examples {
+            padding: 15px 20px;
+            background: #fffbeb;
+            border-top: 1px solid #fef3c7;
+        }
+
+        .quick-examples-title {
+            font-size: 0.85em;
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .example-chip {
+            background: white;
+            border: 1px solid #fbbf24;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            color: #78350f;
+            text-align: left;
+            margin-bottom: 8px;
+        }
+
+        .example-chip:hover {
+            background: #fef3c7;
+            transform: translateX(5px);
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 2px solid #e2e8f0;
+            background: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            min-height: 80px;
+            max-height: 150px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 0 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .loading-indicator.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .chat-sidebar {
+                width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .chat-sidebar {
+                width: 100%;
+                height: 50vh;
+            }
+
+            .main-content {
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 主内容区域（左侧） -->
+        <div class="main-content">
+            <!-- 窗口2：折线图 -->
+            <div class="chart-window">
+                <div class="window-header">
+                    <div class="window-title">📈 回测折线图</div>
+                </div>
+                <div class="chart-container" id="chartContainer">
+                    <img src="折线图.jpg" alt="回测折线图" class="chart-image" id="chartImage" onclick="handleChartClick(event)">
+                    <div class="chart-overlay" id="chartOverlay"></div>
+                    <div class="chart-hint">💡 点击图表查看对应时间的财政政策新闻</div>
+                </div>
+            </div>
+
+            <!-- 窗口3：新闻列表 -->
+            <div class="news-window">
+                <div class="window-header">
+                    <div class="window-title">📰 财政扩张相关新闻</div>
+                </div>
+                <div class="news-list" id="newsList">
+                    <div class="empty-news">
+                        <div class="empty-news-icon">📰</div>
+                        <h3>点击图表查看新闻</h3>
+                        <p>点击上方折线图的任意位置<br>查看对应时间的财政扩张政策新闻</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 窗口1：Chat侧边栏（右侧） -->
+        <div class="chat-sidebar">
+            <div class="chat-header">
+                <h2>💬 策略对话</h2>
+                <p>描述您的投资策略需求</p>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        <div>您好！我是智能回测助手。请告诉我您的投资策略要求，我将为您进行模拟回测分析。</div>
+                        <div class="message-time">刚刚</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-examples">
+                <div class="quick-examples-title">💡 快速示例</div>
+                <div class="example-chip" onclick="useExample(this)">
+                    60%仓位给上证指数，40%仓位用于，当财政政策扩张时，做多与其相关的股票，每只股票持仓相同，总持仓40%
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <span>AI正在思考...</span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea class="chat-input" id="chatInput"
+                              placeholder="描述您的投资策略...&#10;（按Ctrl+Enter发送）"
+                              rows="3"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 财政扩张新闻数据库
+        const newsDatabase = {
+            '2020': [
+                {
+                    title: '财政部：2020年一季度积极财政政策加力提效',
+                    content: '财政部发布数据显示，一季度全国一般公共预算支出55284亿元，同比增长7.8%。其中，基础设施建设投资大幅增加，中央财政加大对地方转移支付力度，支持地方稳投资、补短板。',
+                    source: '财政部官网',
+                    date: '2020-04-15',
+                    tag: '财政政策'
+                },
+                {
+                    title: '新基建投资规模超3万亿，5G、数据中心成重点',
+                    content: '国家发改委表示，将加快推进新型基础设施建设，预计全年投资规模将超过3万亿元。重点支持5G网络、数据中心、工业互联网等领域，推动经济高质量发展。',
+                    source: '新华社',
+                    date: '2020-05-22',
+                    tag: '基建投资'
+                }
+            ],
+            '2021': [
+                {
+                    title: '中央经济工作会议：保持宏观政策连续性稳定性',
+                    content: '会议强调，积极的财政政策要提质增效、更可持续。要保持必要的财政支出强度，在促进科技创新、加快经济结构调整、调节收入分配上主动作为，抓实化解地方政府隐性债务风险工作。',
+                    source: '新华社',
+                    date: '2021-12-10',
+                    tag: '财政政策'
+                },
+                {
+                    title: '财政支出结构优化，基建投资同比增15.6%',
+                    content: '2021年上半年，全国基础设施建设投资同比增长15.6%，其中交通运输、水利管理等领域投资增速较快。财政部加大对重点项目和重大工程的支持力度。',
+                    source: 'Wind资讯',
+                    date: '2021-07-18',
+                    tag: '基建投资'
+                }
+            ],
+            '2022': [
+                {
+                    title: '政府工作报告：2022年赤字率拟按2.8%左右安排',
+                    content: '政府工作报告指出，今年赤字率拟按2.8%左右安排，中央对地方转移支付增加约1.5万亿元、规模近9.8万亿元。适度超前开展基础设施投资，建设重点水利工程。',
+                    source: '中国政府网',
+                    date: '2022-03-05',
+                    tag: '财政预算'
+                },
+                {
+                    title: '专项债发行提速，支持基建投资稳增长',
+                    content: '前三季度新增专项债券发行规模达3.45万亿元，重点投向交通基础设施、能源、农林水利等九大领域。地方政府债券发行节奏加快，为稳增长提供有力支撑。',
+                    source: '证券时报',
+                    date: '2022-09-28',
+                    tag: '专项债'
+                }
+            ],
+            '2023': [
+                {
+                    title: '财政部：2023年继续实施积极的财政政策',
+                    content: '财政部部长刘昆表示，2023年将保持必要的财政支出强度，合理安排地方政府专项债券规模，支持重大项目建设和设备更新改造。预计全年一般公共预算支出将增长5.6%。',
+                    source: '财政部官网',
+                    date: '2023-01-28',
+                    tag: '财政政策'
+                },
+                {
+                    title: '上半年基建投资增长15.3%，财政政策效果显现',
+                    content: '国家统计局数据显示，上半年基础设施投资同比增长15.3%，其中水利管理业投资增长13.5%，交通运输业投资增长16.2%。积极财政政策持续发力，有效拉动经济增长。',
+                    source: '国家统计局',
+                    date: '2023-07-15',
+                    tag: '基建投资'
+                },
+                {
+                    title: '增发1万亿元国债支持灾后重建和基础设施建设',
+                    content: '国务院决定在今年四季度增发2023年国债1万亿元，作为特别国债管理。资金全部通过转移支付方式安排给地方，集中力量支持灾后恢复重建和弥补防灾减灾救灾短板。',
+                    source: '新华社',
+                    date: '2023-10-24',
+                    tag: '国债发行'
+                }
+            ],
+            '2024': [
+                {
+                    title: '2024年财政赤字率提高至3%，加大宏观调控力度',
+                    content: '2024年政府工作报告明确，赤字率拟按3%安排，赤字规模4.06万亿元，比上年增加1800亿元。拟安排地方政府专项债券3.9万亿元，连续第二年保持较高规模。',
+                    source: '中国政府网',
+                    date: '2024-03-05',
+                    tag: '财政预算'
+                },
+                {
+                    title: '"两新"政策推动，设备更新和消费品以旧换新全面启动',
+                    content: '国务院印发《推动大规模设备更新和消费品以旧换新行动方案》，中央财政设立专项资金，支持重点行业设备更新改造。预计将带动社会投资超5万亿元。',
+                    source: '经济日报',
+                    date: '2024-04-12',
+                    tag: '政策支持'
+                },
+                {
+                    title: '前三季度财政支出增长9.2%，基建投资保持较快增长',
+                    content: '财政部数据显示，前三季度全国一般公共预算支出211430亿元，同比增长9.2%。基础设施建设领域支出力度加大，交通运输、水利等重点项目推进顺利。',
+                    source: '财政部官网',
+                    date: '2024-10-18',
+                    tag: '财政支出'
+                }
+            ]
+        };
+
+        let conversationStep = 0;
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('user', message);
+            input.value = '';
+
+            // 显示加载状态
+            document.getElementById('loadingIndicator').classList.add('show');
+            document.getElementById('sendBtn').disabled = true;
+
+            // 模拟AI回复
+            setTimeout(() => {
+                let reply = '';
+
+                if (conversationStep === 0) {
+                    // 第一次回复：询问持有时间
+                    reply = '做多之后，仓位持有多久之后卖出？';
+                    conversationStep = 1;
+                } else if (conversationStep === 1) {
+                    // 第二次回复：确认策略并显示结果
+                    reply = `好的，我已理解您的策略：
+
+• 基础配置：60%仓位投资上证指数
+• 条件策略：40%仓位在财政政策扩张时做多相关股票
+• 持有周期：${message}
+
+回测已完成！左侧折线图显示了策略表现与上证500的对比。您可以点击图表上的任意位置，查看对应时间点的财政扩张政策新闻。`;
+                    conversationStep = 2;
+                } else {
+                    reply = '感谢您的提问！如需调整策略或重新回测，请随时告诉我。';
+                }
+
+                addMessage('assistant', reply);
+
+                document.getElementById('loadingIndicator').classList.remove('show');
+                document.getElementById('sendBtn').disabled = false;
+            }, 1500);
+        }
+
+        // 添加消息
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
+                          now.getMinutes().toString().padStart(2, '0');
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div style="white-space: pre-wrap;">${content}</div>
+                    <div class="message-time">${timeStr}</div>
+                </div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 使用示例
+        function useExample(element) {
+            const text = element.textContent;
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        // 处理图表点击
+        function handleChartClick(event) {
+            const img = event.target;
+            const rect = img.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // 计算相对位置（0-1）
+            const relativeX = x / rect.width;
+
+            // 根据X位置判断年份（粗略估计）
+            let year;
+            if (relativeX < 0.2) year = '2020';
+            else if (relativeX < 0.4) year = '2021';
+            else if (relativeX < 0.6) year = '2022';
+            else if (relativeX < 0.8) year = '2023';
+            else year = '2024';
+
+            // 添加点击标记
+            const overlay = document.getElementById('chartOverlay');
+            overlay.innerHTML = `<div class="click-marker" style="left: ${x}px; top: ${y}px;"></div>`;
+
+            // 显示对应年份的新闻
+            showNews(year);
+        }
+
+        // 显示新闻
+        function showNews(year) {
+            const newsList = document.getElementById('newsList');
+            const news = newsDatabase[year] || [];
+
+            if (news.length === 0) {
+                newsList.innerHTML = `
+                    <div class="empty-news">
+                        <div class="empty-news-icon">📰</div>
+                        <h3>暂无新闻</h3>
+                        <p>该时间段暂无财政扩张相关新闻</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            news.forEach((item, index) => {
+                html += `
+                    <div class="news-item" style="animation-delay: ${index * 0.1}s">
+                        <div class="news-header">
+                            <div class="news-title">${item.title}</div>
+                            <div class="news-date">${item.date}</div>
+                        </div>
+                        <div class="news-content">${item.content}</div>
+                        <div class="news-source">
+                            <span class="news-tag">${item.tag}</span>
+                            <span>📰 ${item.source}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            newsList.innerHTML = html;
+        }
+
+        // 支持Ctrl+Enter发送
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

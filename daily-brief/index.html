@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlook - 一句话日报</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f3f2f1;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Outlook顶部导航栏 */
+        .outlook-topbar {
+            background: #0078d4;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .outlook-logo {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .outlook-search {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            color: white;
+            width: 300px;
+        }
+
+        .outlook-search::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Ribbon工具栏 */
+        .outlook-ribbon {
+            background: white;
+            border-bottom: 1px solid #d1d1d1;
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .ribbon-tab {
+            padding: 6px 16px;
+            cursor: pointer;
+            color: #323130;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+        }
+
+        .ribbon-tab.active {
+            border-bottom-color: #0078d4;
+            color: #0078d4;
+            font-weight: 600;
+        }
+
+        .ribbon-tab:hover {
+            background: #f3f2f1;
+        }
+
+        /* 主容器 */
+        .outlook-container {
+            display: flex;
+            height: calc(100vh - 48px - 41px);
+        }
+
+        /* 左侧导航 */
+        .outlook-sidebar {
+            width: 280px;
+            background: #faf9f8;
+            border-right: 1px solid #d1d1d1;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid #edebe9;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            color: #605e5c;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .folder-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #323130;
+        }
+
+        .folder-item:hover {
+            background: #e1dfdd;
+        }
+
+        .folder-item.active {
+            background: #e1dfdd;
+            font-weight: 600;
+        }
+
+        .folder-icon {
+            font-size: 16px;
+        }
+
+        .folder-count {
+            margin-left: auto;
+            background: #0078d4;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* 邮件列表 */
+        .outlook-list {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #d1d1d1;
+            overflow-y: auto;
+        }
+
+        .list-header {
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            background: #faf9f8;
+        }
+
+        .list-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 8px;
+        }
+
+        .list-filter {
+            font-size: 13px;
+            color: #605e5c;
+        }
+
+        .email-item {
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .email-item:hover {
+            background: #f3f2f1;
+        }
+
+        .email-item.active {
+            background: #e1f5fe;
+            border-left: 3px solid #0078d4;
+        }
+
+        .email-sender {
+            font-weight: 600;
+            color: #323130;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .email-subject {
+            color: #323130;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .email-preview {
+            color: #605e5c;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .email-time {
+            color: #605e5c;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .unread-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #0078d4;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* 邮件阅读窗格 */
+        .outlook-reading-pane {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reading-pane-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #edebe9;
+        }
+
+        .email-full-subject {
+            font-size: 24px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 16px;
+        }
+
+        .email-meta-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .meta-label {
+            color: #605e5c;
+            width: 80px;
+        }
+
+        .meta-value {
+            color: #323130;
+            font-weight: 500;
+        }
+
+        .reading-pane-toolbar {
+            padding: 12px 32px;
+            background: #faf9f8;
+            border-bottom: 1px solid #edebe9;
+            display: flex;
+            gap: 12px;
+        }
+
+        .toolbar-action {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .toolbar-action:hover {
+            background: #e1dfdd;
+        }
+
+        .reading-pane-body {
+            padding: 32px;
+            flex: 1;
+        }
+
+        .email-greeting {
+            font-size: 15px;
+            color: #323130;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .news-container {
+            margin-top: 24px;
+        }
+
+        .news-item {
+            padding: 20px;
+            margin-bottom: 16px;
+            background: #faf9f8;
+            border-left: 4px solid #0078d4;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .news-item:hover {
+            background: #f3f2f1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .news-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .news-number {
+            width: 28px;
+            height: 28px;
+            background: #0078d4;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .news-category {
+            background: #d1e7ff;
+            color: #004578;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .news-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #323130;
+        }
+
+        .email-signature {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #edebe9;
+            color: #605e5c;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .signature-name {
+            font-weight: 600;
+            color: #323130;
+            margin-top: 8px;
+        }
+
+        .email-disclaimer {
+            margin-top: 24px;
+            padding: 16px;
+            background: #fff4ce;
+            border-left: 4px solid #ffb900;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #323130;
+            line-height: 1.5;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #faf9f8;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c8c6c4;
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a19f9d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Outlook顶部导航栏 -->
+    <div class="outlook-topbar">
+        <div class="outlook-logo">
+            📧 Outlook
+        </div>
+        <input type="text" class="outlook-search" placeholder="搜索邮件">
+    </div>
+
+    <!-- Ribbon工具栏 -->
+    <div class="outlook-ribbon">
+        <div class="ribbon-tab active">主页</div>
+        <div class="ribbon-tab">查看</div>
+        <div class="ribbon-tab">帮助</div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="outlook-container">
+        <!-- 左侧导航 -->
+        <div class="outlook-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">收藏夹</div>
+                <div class="folder-item active">
+                    <span class="folder-icon">📥</span>
+                    <span>收件箱</span>
+                    <span class="folder-count">1</span>
+                </div>
+                <div class="folder-item">
+                    <span class="folder-icon">📤</span>
+                    <span>已发送邮件</span>
+                </div>
+                <div class="folder-item">
+                    <span class="folder-icon">🗑️</span>
+                    <span>已删除邮件</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">文件夹</div>
+                <div class="folder-item">
+                    <span class="folder-icon">📁</span>
+                    <span>草稿</span>
+                </div>
+                <div class="folder-item">
+                    <span class="folder-icon">⭐</span>
+                    <span>标记邮件</span>
+                </div>
+                <div class="folder-item">
+                    <span class="folder-icon">🗄️</span>
+                    <span>存档</span>
+                </div>
+                <div class="folder-item">
+                    <span class="folder-icon">📊</span>
+                    <span>投研日报</span>
+                    <span class="folder-count">1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 邮件列表 -->
+        <div class="outlook-list">
+            <div class="list-header">
+                <div class="list-title">收件箱</div>
+                <div class="list-filter">全部 · 今天 · 1封新邮件</div>
+            </div>
+
+            <div class="email-item active">
+                <div class="email-sender">
+                    <span class="unread-badge"></span>
+                    AI投研助手
+                </div>
+                <div class="email-subject">今日投资要闻 · 一句话日报</div>
+                <div class="email-preview">张经理，早上好！以下是今日为您精选的3条投资要闻...</div>
+                <div class="email-time">今天 07:00</div>
+            </div>
+
+            <div class="email-item">
+                <div class="email-sender">合规部</div>
+                <div class="email-subject">关于加强量化交易监管的通知</div>
+                <div class="email-preview">根据证监会最新规定...</div>
+                <div class="email-time">昨天 15:30</div>
+            </div>
+
+            <div class="email-item">
+                <div class="email-sender">研究部</div>
+                <div class="email-subject">2024年12月策略月报</div>
+                <div class="email-preview">本月市场回顾与展望...</div>
+                <div class="email-time">昨天 10:15</div>
+            </div>
+        </div>
+
+        <!-- 邮件阅读窗格 -->
+        <div class="outlook-reading-pane">
+            <div class="reading-pane-header">
+                <div class="email-full-subject">📊 今日投资要闻 · 一句话日报</div>
+                <div class="email-meta-row">
+                    <span class="meta-label">发件人:</span>
+                    <span class="meta-value">AI投研助手 &lt;ai-research@fund.com&gt;</span>
+                </div>
+                <div class="email-meta-row">
+                    <span class="meta-label">收件人:</span>
+                    <span class="meta-value">张明 基金经理 &lt;zhangming@fund.com&gt;</span>
+                </div>
+                <div class="email-meta-row">
+                    <span class="meta-label">发送时间:</span>
+                    <span class="meta-value">2024年12月21日 星期六 07:00</span>
+                </div>
+            </div>
+
+            <div class="reading-pane-toolbar">
+                <button class="toolbar-action">↩️ 回复</button>
+                <button class="toolbar-action">↪️ 转发</button>
+                <button class="toolbar-action">🗑️ 删除</button>
+                <button class="toolbar-action">🗄️ 存档</button>
+                <button class="toolbar-action">⭐ 标记</button>
+            </div>
+
+            <div class="reading-pane-body">
+                <div class="email-greeting">
+                    <strong>张经理，早上好！</strong>
+                    <br><br>
+                    以下是今日为您精选的<strong>3条投资要闻</strong>，涵盖宏观经济、A股市场及政策动向。
+                </div>
+
+                <div class="news-container">
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-number">1</div>
+                            <div class="news-category">宏观经济</div>
+                        </div>
+                        <div class="news-text">
+                            美联储12月议息会议维持利率不变，但点阵图显示2025年可能降息两次，低于市场预期的三次，美元指数应声上涨至107.2，对全球风险资产形成压力。
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-number">2</div>
+                            <div class="news-category">A股市场</div>
+                        </div>
+                        <div class="news-text">
+                            沪深300指数收涨1.2%，北向资金净流入82亿元，半导体板块领涨，中芯国际涨超5%，市场情绪回暖明显，您持仓的半导体主题基金今日净值预计上涨约2.3%。
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-header">
+                            <div class="news-number">3</div>
+                            <div class="news-category">政策动向</div>
+                        </div>
+                        <div class="news-text">
+                            中央经济工作会议定调2025年"适度宽松"货币政策，为14年来首次，明确提出"促进房地产市场止跌回稳"，政策转向信号强烈，建议增配受益于宽松政策的金融、地产及基建板块。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="email-signature">
+                    祝您投资顺利！
+                    <div class="signature-name">AI投研助手</div>
+                    XX资产管理公司 投资研究部
+                    <br>
+                    电话: +86 21 6888 8888
+                    <br>
+                    邮箱: ai-research@fund.com
+                </div>
+
+                <div class="email-disclaimer">
+                    ⚠️ <strong>重要提示：</strong>本邮件由AI系统自动生成并发送，基于您的订阅偏好和持仓情况。数据来源于Wind、Bloomberg及公开媒体，仅供参考，不构成投资建议。如需调整推送内容或频率，请联系投研部或通过系统设置修改。
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
