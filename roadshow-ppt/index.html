@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金路演材料 - PowerPoint</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif;
+            background: #1e1e1e;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* PPT顶部工具栏 */
+        .ppt-toolbar {
+            background: #c43e1c;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .ppt-icon {
+            font-size: 24px;
+        }
+
+        .toolbar-title {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .toolbar-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* 主容器 */
+        .ppt-main {
+            display: flex;
+            height: calc(100vh - 50px);
+        }
+
+        /* 左侧导航栏 */
+        .slide-nav {
+            width: 220px;
+            background: #252525;
+            overflow-y: auto;
+            padding: 20px 12px;
+        }
+
+        .nav-title {
+            color: #a0a0a0;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-left: 8px;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            background: #333;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover {
+            border-color: #c43e1c;
+            transform: translateX(3px);
+        }
+
+        .nav-item.active {
+            border-color: #c43e1c;
+            box-shadow: 0 0 15px rgba(196, 62, 28, 0.4);
+        }
+
+        .nav-preview {
+            height: 90px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            font-size: 11px;
+            text-align: center;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .nav-label {
+            padding: 8px;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* 幻灯片展示区 */
+        .slide-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .slide-wrapper {
+            width: 1000px;
+            height: 562px;
+            background: white;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: none;
+            padding: 50px 60px;
+        }
+
+        .slide.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 幻灯片1：核心业绩指标 */
+        .slide-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .slide-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .slide-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .slide-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .metric-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s;
+        }
+
+        .metric-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .metric-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .metric-name {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .metric-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .metric-number.positive {
+            color: #27ae60;
+        }
+
+        .metric-number.negative {
+            color: #e74c3c;
+        }
+
+        .metric-desc {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+
+        /* 幻灯片2：净值走势 */
+        .slide-2 {
+            background: #f8f9fa;
+        }
+
+        .content-title {
+            font-size: 38px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #667eea;
+        }
+
+        .chart-area {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .chart-img {
+            width: 100%;
+            max-width: 880px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-caption {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        /* 幻灯片3：风险收益分析 */
+        .slide-3 {
+            background: white;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .analysis-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .data-value {
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .data-value.green {
+            color: #27ae60;
+        }
+
+        .data-value.red {
+            color: #e74c3c;
+        }
+
+        .summary-box {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .summary-text {
+            font-size: 16px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        /* 幻灯片4：市场策略总结 */
+        .slide-4 {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .strategy-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title.opportunities {
+            color: #27ae60;
+        }
+
+        .card-title.risks {
+            color: #e74c3c;
+        }
+
+        .strategy-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .strategy-list li {
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #2c3e50;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .strategy-list li:last-child {
+            border-bottom: none;
+        }
+
+        .strategy-list li::before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+        }
+
+        .strategy-list.opportunities li::before {
+            color: #27ae60;
+        }
+
+        .strategy-list.risks li::before {
+            color: #e74c3c;
+        }
+
+        .conclusion-box {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .conclusion-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .conclusion-text {
+            font-size: 15px;
+            color: #34495e;
+            line-height: 1.8;
+        }
+
+        /* 导航按钮 */
+        .nav-arrows {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        .arrow-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .arrow-btn:hover {
+            background: #c43e1c;
+            transform: scale(1.1);
+        }
+
+        .slide-indicator {
+            position: absolute;
+            bottom: 35px;
+            right: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* 滚动条 */
+        .slide-nav::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .slide-nav::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        .slide-nav::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .slide-nav::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+</head>
+<body>
+    <!-- PPT工具栏 -->
+    <div class="ppt-toolbar">
+        <div class="toolbar-left">
+            <div class="ppt-icon">📊</div>
+            <div class="toolbar-title">基金路演材料.pptx</div>
+        </div>
+        <div class="toolbar-actions">
+            <button class="toolbar-btn" onclick="startPresentation()">
+                ▶️ 从头开始放映
+            </button>
+            <button class="toolbar-btn" onclick="toggleFullscreen()">
+                🖥️ 全屏
+            </button>
+            <button class="toolbar-btn">
+                💾 保存
+            </button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="ppt-main">
+        <!-- 左侧导航 -->
+        <div class="slide-nav">
+            <div class="nav-title">幻灯片</div>
+
+            <div class="nav-item active" onclick="switchSlide(1)">
+                <div class="nav-preview" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                    核心业绩指标
+                </div>
+                <div class="nav-label">1. 核心业绩指标</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSlide(2)">
+                <div class="nav-preview">
+                    净值走势图表
+                </div>
+                <div class="nav-label">2. 基金净值走势</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSlide(3)">
+                <div class="nav-preview">
+                    风险收益分析
+                </div>
+                <div class="nav-label">3. 风险收益分析</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSlide(4)">
+                <div class="nav-preview" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white;">
+                    市场策略总结
+                </div>
+                <div class="nav-label">4. 市场策略总结</div>
+            </div>
+        </div>
+
+        <!-- 幻灯片展示区 -->
+        <div class="slide-display">
+            <div class="slide-wrapper">
+                <!-- 幻灯片1：核心业绩指标 -->
+                <div class="slide slide-1 active">
+                    <div class="slide-header">
+                        <div class="slide-title">基金核心业绩指标</div>
+                        <div class="slide-subtitle">Fund Performance Indicators</div>
+                    </div>
+
+                    <div class="metrics-container">
+                        <div class="metric-box">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-name">累计净值</div>
+                            <div class="metric-number positive">1.8542</div>
+                            <div class="metric-desc">成立以来 +85.42%</div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-name">年化收益率</div>
+                            <div class="metric-number positive">28.76%</div>
+                            <div class="metric-desc">近三年数据</div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">⚡</div>
+                            <div class="metric-name">夏普比率</div>
+                            <div class="metric-number positive">2.15</div>
+                            <div class="metric-desc">风险调整后收益</div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">📉</div>
+                            <div class="metric-name">最大回撤</div>
+                            <div class="metric-number negative">-12.34%</div>
+                            <div class="metric-desc">发生于2023年Q2</div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-name">年化波动率</div>
+                            <div class="metric-number">13.37%</div>
+                            <div class="metric-desc">近三年平均</div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">🎯</div>
+                            <div class="metric-name">卡玛比率</div>
+                            <div class="metric-number positive">2.33</div>
+                            <div class="metric-desc">收益/最大回撤</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 幻灯片2：基金净值走势 -->
+                <div class="slide slide-2">
+                    <div class="content-title">基金净值走势</div>
+                    <div class="chart-area">
+                        <img src="../portfolio-backtest/折线图.jpg" alt="净值走势图" class="chart-img">
+                        <div class="chart-caption">
+                            蓝色曲线：本基金净值走势 | 橙色曲线：沪深300指数基准 | 数据区间：2020年1月 - 2024年12月
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 幻灯片3：风险收益分析 -->
+                <div class="slide slide-3">
+                    <div class="content-title">风险收益分析</div>
+
+                    <div class="analysis-grid">
+                        <div class="analysis-section">
+                            <div class="section-header">
+                                📈 收益表现
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">近一年收益率</span>
+                                <span class="data-value green">+32.15%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">近两年收益率</span>
+                                <span class="data-value green">+58.42%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">近三年收益率</span>
+                                <span class="data-value green">+112.68%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">年化收益率</span>
+                                <span class="data-value green">28.76%</span>
+                            </div>
+                        </div>
+
+                        <div class="analysis-section">
+                            <div class="section-header">
+                                ⚠️ 风险指标
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">最大回撤</span>
+                                <span class="data-value red">-12.34%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">年化波动率</span>
+                                <span class="data-value">13.37%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">下行波动率</span>
+                                <span class="data-value">8.92%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">VaR (95%)</span>
+                                <span class="data-value">-2.18%</span>
+                            </div>
+                        </div>
+
+                        <div class="analysis-section">
+                            <div class="section-header">
+                                🎯 风险调整后收益
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">夏普比率</span>
+                                <span class="data-value green">2.15</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">索提诺比率</span>
+                                <span class="data-value green">2.78</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">卡玛比率</span>
+                                <span class="data-value green">2.33</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">信息比率</span>
+                                <span class="data-value green">1.68</span>
+                            </div>
+                        </div>
+
+                        <div class="analysis-section">
+                            <div class="section-header">
+                                📊 其他指标
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">年化Alpha</span>
+                                <span class="data-value green">+8.52%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Beta系数</span>
+                                <span class="data-value">0.85</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">胜率</span>
+                                <span class="data-value green">68.5%</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">盈亏比</span>
+                                <span class="data-value green">2.34</span>
+                            </div>
+                        </div>
+
+                        <div class="summary-box">
+                            <div class="summary-text">
+                                <strong>综合评估：</strong>基金在风险控制良好的前提下取得了优异的收益表现。夏普比率2.15显示风险调整后收益优秀，最大回撤-12.34%控制在合理范围内，年化收益28.76%显著超越基准指数，综合表现位居同类产品前10%。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 幻灯片4：市场策略总结 -->
+                <div class="slide slide-4">
+                    <div class="slide-header">
+                        <div class="slide-title">市场策略总结</div>
+                        <div class="slide-subtitle">Market Strategy Summary</div>
+                    </div>
+
+                    <div class="strategy-grid">
+                        <div class="strategy-card">
+                            <div class="card-title opportunities">
+                                📈 投资机会
+                            </div>
+                            <ul class="strategy-list opportunities">
+                                <li>AI及科技板块受资金青睐，调整即是布局良机</li>
+                                <li>大盘成长风格延续，核心龙头标的配置价值凸显</li>
+                                <li>政策宽松预期支撑市场中期向好趋势</li>
+                                <li>半导体、新能源等行业景气度持续提升</li>
+                                <li>外资持续流入，长期配置需求旺盛</li>
+                            </ul>
+                        </div>
+
+                        <div class="strategy-card">
+                            <div class="card-title risks">
+                                ⚠️ 风险提示
+                            </div>
+                            <ul class="strategy-list risks">
+                                <li>地缘政治风险、国际局势不确定性增加</li>
+                                <li>年底机构止盈可能加剧短期市场波动</li>
+                                <li>估值高位运行，部分板块存在调整压力</li>
+                                <li>流动性分化，小微盘股面临资金压力</li>
+                                <li>宏观经济复苏节奏存在不确定性</li>
+                            </ul>
+                        </div>
+
+                        <div class="conclusion-box">
+                            <div class="conclusion-title">💡 投资建议</div>
+                            <div class="conclusion-text">
+                                维持中性偏多配置策略，重点关注AI、半导体等高成长板块，适度控制仓位应对短期波动风险。建议投资者保持耐心，把握结构性机会，长期来看市场向上趋势不变。建议配置比例：成长股60%、价值股30%、现金10%。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导航按钮 -->
+            <div class="nav-arrows">
+                <button class="arrow-btn" onclick="prevSlide()">‹</button>
+                <button class="arrow-btn" onclick="nextSlide()">›</button>
+            </div>
+
+            <!-- 幻灯片指示器 -->
+            <div class="slide-indicator">
+                <span id="current">1</span> / 4
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        function switchSlide(slideNum) {
+            if (slideNum < 1 || slideNum > totalSlides) return;
+
+            // 隐藏所有幻灯片
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 显示目标幻灯片
+            document.querySelectorAll('.slide')[slideNum - 1].classList.add('active');
+
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item')[slideNum - 1].classList.add('active');
+
+            // 更新指示器
+            currentSlide = slideNum;
+            document.getElementById('current').textContent = slideNum;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                switchSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                switchSlide(currentSlide - 1);
+            }
+        }
+
+        function startPresentation() {
+            switchSlide(1);
+            toggleFullscreen();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 键盘导航
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'Home') {
+                switchSlide(1);
+            } else if (e.key === 'End') {
+                switchSlide(totalSlides);
+            }
+        });
+    </script>
+</body>
+</html>

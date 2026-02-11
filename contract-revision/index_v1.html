@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同修订系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #e8e8e8;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Word风格工具栏 */
+        .toolbar {
+            background: #2b579a;
+            color: white;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toolbar-title {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 主文档区域 */
+        .document-container {
+            height: calc(100vh - 50px);
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            overflow-y: auto;
+            background: #e8e8e8;
+        }
+
+        .document-container::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .document-container::-webkit-scrollbar-track {
+            background: #d0d0d0;
+        }
+
+        .document-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+
+        /* Word页面 */
+        .document-page {
+            width: 21cm;
+            min-height: 29.7cm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            padding: 2.54cm 3.17cm;
+            margin-bottom: 20px;
+        }
+
+        /* 文档标题 */
+        .doc-title {
+            text-align: center;
+            font-size: 22pt;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .doc-subtitle {
+            text-align: center;
+            font-size: 14pt;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        /* 段落样式 */
+        .doc-paragraph {
+            line-height: 2;
+            text-indent: 2em;
+            margin-bottom: 15px;
+            font-size: 12pt;
+            color: #000;
+            position: relative;
+        }
+
+        .doc-section {
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 14pt;
+            color: #000;
+        }
+
+        .doc-clause {
+            margin-bottom: 20px;
+        }
+
+        .clause-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 12pt;
+        }
+
+        /* 批注样式 */
+        .comment-marker {
+            background: #fff3cd;
+            border-bottom: 2px solid #ffc107;
+            cursor: pointer;
+            position: relative;
+            padding: 2px 4px;
+        }
+
+        .comment-marker:hover {
+            background: #ffe69c;
+        }
+
+        .comment-box {
+            position: absolute;
+            right: -280px;
+            top: -10px;
+            width: 260px;
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .comment-header {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .comment-content {
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .comment-suggestion {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 3px solid #28a745;
+            font-size: 0.9em;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-accept {
+            flex: 1;
+            padding: 8px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .btn-accept:hover {
+            background: #218838;
+        }
+
+        .btn-reject {
+            flex: 1;
+            padding: 8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .btn-reject:hover {
+            background: #c82333;
+        }
+
+        .comment-meta {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        /* 删除线样式 */
+        .strikethrough {
+            text-decoration: line-through;
+            color: #dc3545;
+            background: #ffe6e6;
+        }
+
+        /* 插入样式 */
+        .insertion {
+            background: #d4edda;
+            color: #155724;
+            text-decoration: underline;
+        }
+
+        /* 已接受样式 */
+        .accepted {
+            background: transparent;
+            border-bottom: none;
+            cursor: default;
+        }
+
+        /* 已拒绝样式 */
+        .rejected {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* 统计栏 */
+        .stats-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 10px 30px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .stat-value.pending {
+            color: #ffc107;
+        }
+
+        .stat-value.accepted {
+            color: #28a745;
+        }
+
+        .stat-value.rejected {
+            color: #dc3545;
+        }
+
+        @media print {
+            .toolbar,
+            .stats-bar,
+            .comment-box {
+                display: none;
+            }
+
+            .document-container {
+                padding: 0;
+                background: white;
+            }
+
+            .document-page {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Word风格工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-title">📄 衍生品交易合同.docx</div>
+        <div class="toolbar-actions">
+            <button class="toolbar-btn" onclick="acceptAll()">✓ 接受全部</button>
+            <button class="toolbar-btn" onclick="rejectAll()">✗ 拒绝全部</button>
+            <button class="toolbar-btn" onclick="window.print()">🖨️ 打印</button>
+        </div>
+    </div>
+
+    <!-- 文档容器 -->
+    <div class="document-container">
+        <div class="document-page">
+            <div class="doc-title">衍生品交易主协议</div>
+            <div class="doc-subtitle">（场外金融衍生品交易框架协议）</div>
+
+            <div class="doc-paragraph">
+                本协议由以下双方于2024年12月20日在中华人民共和国上海市签署：
+            </div>
+
+            <div class="doc-paragraph">
+                <strong>甲方：</strong>XX资产管理有限公司<br>
+                <strong>乙方：</strong>XX证券股份有限公司
+            </div>
+
+            <div class="doc-section">第一条 定义与解释</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">1.1 衍生品交易</div>
+                <div class="doc-paragraph">
+                    本协议项下的"衍生品交易"是指双方根据本协议及相关交易确认书进行的
+                    <span class="comment-marker" onclick="showComment(this, 1)">各类场外金融衍生品交易</span>，包括但不限于利率互换、货币互换、远期外汇交易、期权交易等。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">1.2 交易确认书</div>
+                <div class="doc-paragraph">
+                    "交易确认书"是指双方就具体衍生品交易达成一致后签署的书面文件，应包含交易类型、名义本金、期限、
+                    <span class="comment-marker" onclick="showComment(this, 2)">定价方式、结算方式</span>等核心要素。
+                </div>
+            </div>
+
+            <div class="doc-section">第二条 交易条款</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">2.1 交易授权</div>
+                <div class="doc-paragraph">
+                    双方确认，各自已获得充分授权订立本协议及进行本协议项下的衍生品交易，
+                    <span class="comment-marker" onclick="showComment(this, 3)">且该等交易已获得必要的内部审批</span>。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">2.2 交易限额</div>
+                <div class="doc-paragraph">
+                    双方同意，
+                    <span class="comment-marker" onclick="showComment(this, 4)">单笔交易的名义本金不得超过人民币5亿元</span>，
+                    全部未平仓交易的名义本金总额不得超过人民币20亿元。
+                </div>
+            </div>
+
+            <div class="doc-section">第三条 保证金与担保</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">3.1 初始保证金</div>
+                <div class="doc-paragraph">
+                    乙方有权要求甲方在交易开始时提供初始保证金，
+                    <span class="comment-marker" onclick="showComment(this, 5)">初始保证金比例不低于名义本金的10%</span>，
+                    具体比例根据交易类型和市场情况由双方协商确定。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">3.2 追加保证金</div>
+                <div class="doc-paragraph">
+                    当市场价值变动导致保证金不足时，甲方应在接到通知后
+                    <span class="comment-marker" onclick="showComment(this, 6)">2个工作日内</span>
+                    追加保证金至要求水平。
+                </div>
+            </div>
+
+            <div class="doc-section">第四条 违约事件</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">4.1 违约情形</div>
+                <div class="doc-paragraph">
+                    以下任一情形发生，即构成违约事件：<br>
+                    (a) 未按时支付到期款项；<br>
+                    (b)
+                    <span class="comment-marker" onclick="showComment(this, 7)">未在规定期限内提供或追加保证金</span>；<br>
+                    (c) 违反陈述与保证；<br>
+                    (d) 破产、清算或丧失清偿能力。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">4.2 违约救济</div>
+                <div class="doc-paragraph">
+                    违约事件发生后，守约方有权：<br>
+                    (a) 立即终止全部或部分未平仓交易；<br>
+                    (b) 要求违约方支付
+                    <span class="comment-marker" onclick="showComment(this, 8)">违约金</span>；<br>
+                    (c) 扣划保证金抵偿损失。
+                </div>
+            </div>
+
+            <div class="doc-section">第五条 终止与结算</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">5.1 提前终止</div>
+                <div class="doc-paragraph">
+                    发生违约事件或终止事件时，守约方可提前终止交易。终止日为守约方发出终止通知之日起
+                    <span class="comment-marker" onclick="showComment(this, 9)">5个工作日后</span>。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">5.2 净额结算</div>
+                <div class="doc-paragraph">
+                    交易终止后，双方应采用净额结算方式，
+                    <span class="comment-marker" onclick="showComment(this, 10)">由亏损方向盈利方支付净额差额</span>。
+                    净额计算应由独立第三方估值机构按照市场公允价值确定。
+                </div>
+            </div>
+
+            <div class="doc-section">第六条 其他条款</div>
+
+            <div class="doc-clause">
+                <div class="clause-title">6.1 适用法律</div>
+                <div class="doc-paragraph">
+                    本协议适用中华人民共和国法律，并按其解释。
+                </div>
+            </div>
+
+            <div class="doc-clause">
+                <div class="clause-title">6.2 争议解决</div>
+                <div class="doc-paragraph">
+                    因本协议引起的争议，双方应友好协商解决；协商不成的，提交上海国际经济贸易仲裁委员会仲裁。
+                </div>
+            </div>
+
+            <div class="doc-paragraph" style="margin-top: 60px;">
+                <strong>甲方（盖章）：</strong>___________________<br><br>
+                <strong>授权代表签字：</strong>___________________<br><br>
+                <strong>日期：</strong>___________________
+            </div>
+
+            <div class="doc-paragraph" style="margin-top: 40px;">
+                <strong>乙方（盖章）：</strong>___________________<br><br>
+                <strong>授权代表签字：</strong>___________________<br><br>
+                <strong>日期：</strong>___________________
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计栏 -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-label">待处理批注：</span>
+            <span class="stat-value pending" id="pendingCount">10</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">已接受：</span>
+            <span class="stat-value accepted" id="acceptedCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">已拒绝：</span>
+            <span class="stat-value rejected" id="rejectedCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        // 批注数据
+        const comments = {
+            1: {
+                author: 'AI合规助手',
+                content: '建议明确具体包含的衍生品类型，避免范围过于宽泛。',
+                suggestion: '建议修改为：「包括利率互换、货币互换、商品期权、股指期权，但不包括信用违约互换(CDS)」',
+                type: 'compliance'
+            },
+            2: {
+                author: 'AI合规助手',
+                content: '缺少估值方法的约定，可能导致争议。',
+                suggestion: '建议添加：「估值方法、估值频率（每日/每周）」',
+                type: 'risk'
+            },
+            3: {
+                author: 'AI合规助手',
+                content: '应明确内部审批流程和审批权限。',
+                suggestion: '建议修改为：「且该等交易已获得董事会（或投资决策委员会）的书面批准」',
+                type: 'compliance'
+            },
+            4: {
+                author: 'AI合规助手',
+                content: '限额设置偏高，建议降低风险敞口。',
+                suggestion: '建议修改为：「单笔交易不超过3亿元，总额不超过10亿元」',
+                type: 'risk'
+            },
+            5: {
+                author: 'AI合规助手',
+                content: '初始保证金比例偏低，无法有效覆盖市场风险。',
+                suggestion: '建议修改为：「初始保证金比例不低于名义本金的15%-20%」',
+                type: 'risk'
+            },
+            6: {
+                author: 'AI合规助手',
+                content: '追加保证金时限过长，应缩短以控制风险。',
+                suggestion: '建议修改为：「1个工作日内」或「当日收盘前」',
+                type: 'risk'
+            },
+            7: {
+                author: 'AI合规助手',
+                content: '应明确"规定期限"的具体时间。',
+                suggestion: '建议修改为：「未在要求的时限（初始保证金为交易日当日，追加保证金为1个工作日）内提供或追加保证金」',
+                type: 'compliance'
+            },
+            8: {
+                author: 'AI合规助手',
+                content: '违约金条款过于笼统，应明确计算方式。',
+                suggestion: '建议修改为：「违约金为未履约金额的3%-5%，或实际损失，以较高者为准」',
+                type: 'legal'
+            },
+            9: {
+                author: 'AI合规助手',
+                content: '终止生效期过长，可能扩大损失。',
+                suggestion: '建议修改为：「2个工作日后」',
+                type: 'risk'
+            },
+            10: {
+                author: 'AI合规助手',
+                content: '应明确估值时点和估值方法。',
+                suggestion: '建议修改为：「由亏损方向盈利方支付净额差额，净额以终止日市场收盘价按照Black-Scholes模型或行业标准估值方法计算」',
+                type: 'compliance'
+            }
+        };
+
+        let currentComment = null;
+        let stats = {
+            pending: 10,
+            accepted: 0,
+            rejected: 0
+        };
+
+        // 显示批注
+        function showComment(element, commentId) {
+            // 移除之前的批注框
+            const existingBoxes = document.querySelectorAll('.comment-box');
+            existingBoxes.forEach(box => box.remove());
+
+            // 如果点击同一个，则关闭
+            if (currentComment === commentId) {
+                currentComment = null;
+                return;
+            }
+
+            currentComment = commentId;
+            const comment = comments[commentId];
+
+            const commentBox = document.createElement('div');
+            commentBox.className = 'comment-box';
+            commentBox.innerHTML = `
+                <div class="comment-header">
+                    💬 ${comment.author} · ${comment.type === 'compliance' ? '合规建议' : comment.type === 'risk' ? '风险提示' : '法律建议'}
+                </div>
+                <div class="comment-content">${comment.content}</div>
+                ${comment.suggestion ? `<div class="comment-suggestion">✏️ ${comment.suggestion}</div>` : ''}
+                <div class="comment-actions">
+                    <button class="btn-accept" onclick="acceptComment(${commentId}, this)">✓ 接受</button>
+                    <button class="btn-reject" onclick="rejectComment(${commentId}, this)">✗ 拒绝</button>
+                </div>
+                <div class="comment-meta">批注ID: #${commentId} | 风险等级: ${comment.type === 'risk' ? '高' : '中'}</div>
+            `;
+
+            element.appendChild(commentBox);
+
+            // 点击文档其他地方关闭批注
+            setTimeout(() => {
+                document.addEventListener('click', closeCommentOnClickOutside);
+            }, 0);
+        }
+
+        // 点击外部关闭批注
+        function closeCommentOnClickOutside(e) {
+            if (!e.target.closest('.comment-marker') && !e.target.closest('.comment-box')) {
+                const boxes = document.querySelectorAll('.comment-box');
+                boxes.forEach(box => box.remove());
+                currentComment = null;
+                document.removeEventListener('click', closeCommentOnClickOutside);
+            }
+        }
+
+        // 接受批注
+        function acceptComment(commentId, btn) {
+            const marker = document.querySelectorAll('.comment-marker')[commentId - 1];
+            marker.classList.add('accepted');
+            marker.classList.add('insertion');
+
+            const box = btn.closest('.comment-box');
+            box.remove();
+
+            stats.pending--;
+            stats.accepted++;
+            updateStats();
+
+            currentComment = null;
+        }
+
+        // 拒绝批注
+        function rejectComment(commentId, btn) {
+            const marker = document.querySelectorAll('.comment-marker')[commentId - 1];
+            marker.classList.add('rejected');
+
+            const box = btn.closest('.comment-box');
+            box.remove();
+
+            stats.pending--;
+            stats.rejected++;
+            updateStats();
+
+            currentComment = null;
+        }
+
+        // 接受全部
+        function acceptAll() {
+            if (!confirm('确定接受所有批注修改建议吗？')) return;
+
+            const markers = document.querySelectorAll('.comment-marker:not(.accepted):not(.rejected)');
+            markers.forEach(marker => {
+                marker.classList.add('accepted');
+                marker.classList.add('insertion');
+            });
+
+            stats.accepted += stats.pending;
+            stats.pending = 0;
+            updateStats();
+
+            const boxes = document.querySelectorAll('.comment-box');
+            boxes.forEach(box => box.remove());
+        }
+
+        // 拒绝全部
+        function rejectAll() {
+            if (!confirm('确定拒绝所有批注修改建议吗？')) return;
+
+            const markers = document.querySelectorAll('.comment-marker:not(.accepted):not(.rejected)');
+            markers.forEach(marker => {
+                marker.classList.add('rejected');
+            });
+
+            stats.rejected += stats.pending;
+            stats.pending = 0;
+            updateStats();
+
+            const boxes = document.querySelectorAll('.comment-box');
+            boxes.forEach(box => box.remove());
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('pendingCount').textContent = stats.pending;
+            document.getElementById('acceptedCount').textContent = stats.accepted;
+            document.getElementById('rejectedCount').textContent = stats.rejected;
+        }
+    </script>
+</body>
+</html>

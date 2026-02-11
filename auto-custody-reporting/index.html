@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动报送托管系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .top-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.95em;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #1a2a6c;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            background: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            background: #2a3a7c;
+            transform: translateY(-2px);
+        }
+
+        .sync-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .select-box {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .select-box:focus {
+            outline: none;
+            border-color: #1a2a6c;
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1a2a6c 0%, #2a3a7c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 42, 108, 0.4);
+        }
+
+        .diff-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .diff-table th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .diff-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .diff-row {
+            transition: background 0.2s;
+        }
+
+        .diff-row:hover {
+            background: #f8fafc;
+        }
+
+        .diff-row.has-diff {
+            background: #fef3c7;
+        }
+
+        .diff-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .diff-indicator.match {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .diff-indicator.mismatch {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .value-cell {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .value-cell.diff {
+            color: #dc2626;
+        }
+
+        .email-preview {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .email-header {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .email-field {
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        .email-field strong {
+            color: #1e293b;
+            display: inline-block;
+            width: 80px;
+        }
+
+        .email-body {
+            color: #334155;
+            white-space: pre-wrap;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #64748b;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background: #f1f5f9;
+            transform: translateX(5px);
+        }
+
+        .history-item.success {
+            border-left-color: #22c55e;
+        }
+
+        .history-item.pending {
+            border-left-color: #f59e0b;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .history-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .history-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .history-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .history-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-send {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-draft {
+            padding: 15px 30px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-draft:hover {
+            background: #e2e8f0;
+        }
+
+        .custodian-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .custodian-card {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .custodian-card:hover {
+            border-color: #1a2a6c;
+            background: #f1f5f9;
+        }
+
+        .custodian-card.selected {
+            border-color: #1a2a6c;
+            background: #dbeafe;
+        }
+
+        .custodian-logo {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .custodian-name {
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 自动报送托管系统</h1>
+            <p>智能数据对齐 · 自动邮件回复</p>
+        </div>
+
+        <div class="top-bar">
+            <div class="stat-card">
+                <div class="stat-value">156</div>
+                <div class="stat-label">累计报送次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">本月报送</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">98.5%</div>
+                <div class="stat-label">数据匹配率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">待处理差异</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>🏦 选择托管机构</h2>
+            <div class="custodian-selector">
+                <div class="custodian-card selected" onclick="selectCustodian(this, 'icbc')">
+                    <div class="custodian-logo">🏦</div>
+                    <div class="custodian-name">工商银行</div>
+                </div>
+                <div class="custodian-card" onclick="selectCustodian(this, 'ccb')">
+                    <div class="custodian-logo">🏦</div>
+                    <div class="custodian-name">建设银行</div>
+                </div>
+                <div class="custodian-card" onclick="selectCustodian(this, 'abc')">
+                    <div class="custodian-logo">🏦</div>
+                    <div class="custodian-name">农业银行</div>
+                </div>
+                <div class="custodian-card" onclick="selectCustodian(this, 'boc')">
+                    <div class="custodian-logo">🏦</div>
+                    <div class="custodian-name">中国银行</div>
+                </div>
+                <div class="custodian-card" onclick="selectCustodian(this, 'cmb')">
+                    <div class="custodian-logo">🏦</div>
+                    <div class="custodian-name">招商银行</div>
+                </div>
+            </div>
+
+            <div class="sync-controls">
+                <select class="select-box">
+                    <option>选择产品</option>
+                    <option>XX私募基金1号</option>
+                    <option>XX私募基金2号</option>
+                    <option>XX专项资管计划</option>
+                </select>
+                <select class="select-box">
+                    <option>选择报送日期</option>
+                    <option>2024-12-20（今日）</option>
+                    <option>2024-12-19</option>
+                    <option>2024-12-18</option>
+                </select>
+                <button class="btn-primary" onclick="startSync()">开始数据对齐</button>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <div class="card">
+                <h2>
+                    📊 数据对比结果
+                    <button class="btn-action">导出Excel</button>
+                </h2>
+
+                <table class="diff-table">
+                    <thead>
+                        <tr>
+                            <th>项目</th>
+                            <th>我方数据</th>
+                            <th>托管方数据</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="diff-row">
+                            <td>基金净值</td>
+                            <td class="value-cell">1.2345</td>
+                            <td class="value-cell">1.2345</td>
+                            <td><span class="diff-indicator match">✓ 匹配</span></td>
+                        </tr>
+                        <tr class="diff-row has-diff">
+                            <td>资产总值</td>
+                            <td class="value-cell">100,500,000.00</td>
+                            <td class="value-cell diff">100,450,000.00</td>
+                            <td><span class="diff-indicator mismatch">✗ 差异</span></td>
+                        </tr>
+                        <tr class="diff-row">
+                            <td>负债总额</td>
+                            <td class="value-cell">2,300,000.00</td>
+                            <td class="value-cell">2,300,000.00</td>
+                            <td><span class="diff-indicator match">✓ 匹配</span></td>
+                        </tr>
+                        <tr class="diff-row has-diff">
+                            <td>股票持仓市值</td>
+                            <td class="value-cell">65,200,000.00</td>
+                            <td class="value-cell diff">65,150,000.00</td>
+                            <td><span class="diff-indicator mismatch">✗ 差异</span></td>
+                        </tr>
+                        <tr class="diff-row">
+                            <td>债券持仓市值</td>
+                            <td class="value-cell">28,500,000.00</td>
+                            <td class="value-cell">28,500,000.00</td>
+                            <td><span class="diff-indicator match">✓ 匹配</span></td>
+                        </tr>
+                        <tr class="diff-row">
+                            <td>现金及存款</td>
+                            <td class="value-cell">6,800,000.00</td>
+                            <td class="value-cell">6,800,000.00</td>
+                            <td><span class="diff-indicator match">✓ 匹配</span></td>
+                        </tr>
+                        <tr class="diff-row has-diff">
+                            <td>应收款项</td>
+                            <td class="value-cell">150,000.00</td>
+                            <td class="value-cell diff">100,000.00</td>
+                            <td><span class="diff-indicator mismatch">✗ 差异</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <strong style="color: #92400e;">差异说明：</strong>
+                    <ul style="margin-top: 10px; margin-left: 20px; color: #78350f; line-height: 1.8;">
+                        <li>资产总值差异50,000元：我方已确认为估值调整</li>
+                        <li>股票持仓差异50,000元：与上述估值调整相关</li>
+                        <li>应收款项差异50,000元：托管方未计入当日股息收入</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>✉️ 邮件预览</h2>
+
+                <div class="email-preview">
+                    <div class="email-header">
+                        <div class="email-field">
+                            <strong>收件人：</strong>custody@icbc.com.cn
+                        </div>
+                        <div class="email-field">
+                            <strong>抄送：</strong>compliance@ourcompany.com
+                        </div>
+                        <div class="email-field">
+                            <strong>主题：</strong>XX私募基金1号 2024-12-20 数据核对
+                        </div>
+                        <div class="email-field">
+                            <strong>附件：</strong>数据对比表.xlsx
+                        </div>
+                    </div>
+
+                    <div class="email-body">尊敬的工商银行托管部：
+
+您好！
+
+现将XX私募基金1号2024年12月20日的净值数据与贵行托管数据进行核对，具体情况如下：
+
+一、数据匹配情况
+共核对7项数据，其中4项完全匹配，3项存在差异。
+
+二、差异说明
+1. 资产总值差异：50,000.00元
+   原因：我方已确认为估值调整
+
+2. 股票持仓市值差异：50,000.00元
+   原因：与上述估值调整相关
+
+3. 应收款项差异：50,000.00元
+   原因：托管方未计入当日股息收入
+
+三、处理建议
+建议贵行根据上述说明调整相关数据，如有疑问请及时联系。
+
+详细数据对比表请见附件。
+
+此致
+敬礼！
+
+XX资产管理公司
+2024年12月20日
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-send" onclick="sendEmail()">发送邮件</button>
+                    <button class="btn-draft" onclick="saveDraft()">存为草稿</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h2>
+                📜 报送历史记录
+                <button class="btn-action">筛选</button>
+            </h2>
+
+            <div class="history-list">
+                <div class="history-item success">
+                    <div class="history-header">
+                        <div class="history-title">XX私募基金1号 → 工商银行</div>
+                        <span class="history-status success">已发送</span>
+                    </div>
+                    <div style="color: #475569; font-size: 0.9em; margin-bottom: 8px;">
+                        对比结果：7项数据，3项差异 | 邮件已发送并确认接收
+                    </div>
+                    <div class="history-meta">
+                        <span>📅 2024-12-20 15:30</span>
+                        <span>👤 操作人：张三</span>
+                        <span>📧 接收确认：是</span>
+                    </div>
+                </div>
+
+                <div class="history-item success">
+                    <div class="history-header">
+                        <div class="history-title">XX私募基金2号 → 建设银行</div>
+                        <span class="history-status success">已发送</span>
+                    </div>
+                    <div style="color: #475569; font-size: 0.9em; margin-bottom: 8px;">
+                        对比结果：7项数据，0项差异 | 数据完全匹配
+                    </div>
+                    <div class="history-meta">
+                        <span>📅 2024-12-20 14:20</span>
+                        <span>👤 操作人：李四</span>
+                        <span>📧 接收确认：是</span>
+                    </div>
+                </div>
+
+                <div class="history-item pending">
+                    <div class="history-header">
+                        <div class="history-title">XX专项资管计划 → 招商银行</div>
+                        <span class="history-status pending">待发送</span>
+                    </div>
+                    <div style="color: #475569; font-size: 0.9em; margin-bottom: 8px;">
+                        对比结果：7项数据，1项差异 | 等待复核后发送
+                    </div>
+                    <div class="history-meta">
+                        <span>📅 2024-12-20 13:45</span>
+                        <span>👤 操作人：王五</span>
+                        <span>📝 状态：待复核</span>
+                    </div>
+                </div>
+
+                <div class="history-item success">
+                    <div class="history-header">
+                        <div class="history-title">XX私募基金1号 → 工商银行</div>
+                        <span class="history-status success">已发送</span>
+                    </div>
+                    <div style="color: #475569; font-size: 0.9em; margin-bottom: 8px;">
+                        对比结果：7项数据，0项差异 | 数据完全匹配
+                    </div>
+                    <div class="history-meta">
+                        <span>📅 2024-12-19 16:00</span>
+                        <span>👤 操作人：张三</span>
+                        <span>📧 接收确认：是</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedCustodian = 'icbc';
+
+        function selectCustodian(element, custodian) {
+            document.querySelectorAll('.custodian-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedCustodian = custodian;
+            console.log('选择托管机构:', custodian);
+        }
+
+        function startSync() {
+            alert('开始数据对齐...\n正在从托管方获取数据并进行比对');
+            // 这里可以集成实际的数据对齐API
+        }
+
+        function sendEmail() {
+            if (confirm('确认发送邮件到托管方？')) {
+                alert('邮件发送成功！\n托管方将在接收后进行数据调整。');
+                // 这里可以集成实际的邮件发送API
+            }
+        }
+
+        function saveDraft() {
+            alert('邮件已保存为草稿');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同风控参数提取系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .top-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #134e5e;
+            padding-bottom: 10px;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            border-color: #134e5e;
+            background: #f0fdf4;
+        }
+
+        .upload-zone.dragover {
+            border-color: #71b280;
+            background: #dcfce7;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .upload-zone p {
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .upload-zone .file-types {
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+
+        .uploaded-file {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-icon {
+            font-size: 2em;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            font-size: 0.85em;
+            color: #64748b;
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(19, 78, 94, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .status-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .status-icon.pending {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .status-icon.processing {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-icon.completed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-info {
+            flex: 1;
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .status-desc {
+            font-size: 0.85em;
+            color: #64748b;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .param-card {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 10px;
+            border-left: 4px solid #134e5e;
+        }
+
+        .param-label {
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .param-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #134e5e;
+            margin-bottom: 8px;
+        }
+
+        .param-source {
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        .param-edit-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
+        .param-edit-btn:hover {
+            background: #2563eb;
+        }
+
+        .sentiment-section {
+            grid-column: 1 / -1;
+        }
+
+        .sentiment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sentiment-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .sentiment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sentiment-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .sentiment-item.negative {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .sentiment-item.positive {
+            border-left-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .sentiment-item.neutral {
+            border-left-color: #64748b;
+        }
+
+        .sentiment-content {
+            flex: 1;
+        }
+
+        .sentiment-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .sentiment-text {
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .sentiment-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+
+        .sentiment-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .sentiment-badge.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .sentiment-badge.positive {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .sentiment-badge.neutral {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .notification-setup {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #0ea5e9;
+            margin-top: 20px;
+        }
+
+        .notification-setup h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .researcher-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .researcher-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .researcher-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .researcher-name {
+            flex: 1;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .top-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 合同风控参数提取系统</h1>
+            <p>智能提取合规参数 · 实时舆情监控</p>
+        </div>
+
+        <div class="top-section">
+            <div class="card">
+                <h2>📄 合同上传</h2>
+
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <p><strong>点击上传</strong> 或拖拽合同文件到此处</p>
+                    <p class="file-types">支持格式：.docx, .doc, .pdf</p>
+                    <input type="file" id="fileInput" accept=".doc,.docx,.pdf" style="display: none;">
+                </div>
+
+                <div id="uploadedFile" style="display: none;">
+                    <div class="uploaded-file">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <div class="file-details">
+                                <div class="file-name" id="fileName"></div>
+                                <div class="file-size" id="fileSize"></div>
+                            </div>
+                        </div>
+                        <button class="btn-remove" onclick="removeFile()">移除</button>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="extractBtn" style="margin-top: 20px;" disabled>开始提取参数</button>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ 提取进度</h2>
+                <div class="status-panel">
+                    <div class="status-item">
+                        <div class="status-icon pending" id="status1">①</div>
+                        <div class="status-info">
+                            <div class="status-title">文档解析</div>
+                            <div class="status-desc">等待开始...</div>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon pending" id="status2">②</div>
+                        <div class="status-info">
+                            <div class="status-title">参数识别</div>
+                            <div class="status-desc">等待开始...</div>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon pending" id="status3">③</div>
+                        <div class="status-info">
+                            <div class="status-title">风控规则匹配</div>
+                            <div class="status-desc">等待开始...</div>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon pending" id="status4">④</div>
+                        <div class="status-info">
+                            <div class="status-title">舆情监控启动</div>
+                            <div class="status-desc">等待开始...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="paramsSection" style="display: none; margin-bottom: 20px;">
+            <h2>📊 提取的风控参数</h2>
+            <div class="params-grid">
+                <div class="param-card">
+                    <div class="param-label">💰 单一股票持仓上限</div>
+                    <div class="param-value">10%</div>
+                    <div class="param-source">来源：合同第3.2条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+                <div class="param-card">
+                    <div class="param-label">📈 杠杆率上限</div>
+                    <div class="param-value">200%</div>
+                    <div class="param-source">来源：合同第4.1条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+                <div class="param-card">
+                    <div class="param-label">🔒 最低仓位要求</div>
+                    <div class="param-value">60%</div>
+                    <div class="param-source">来源：合同第3.5条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+                <div class="param-card">
+                    <div class="param-label">⏰ 信息披露频率</div>
+                    <div class="param-value">季度</div>
+                    <div class="param-source">来源：合同第6.3条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+                <div class="param-card">
+                    <div class="param-label">🚫 禁止投资品种</div>
+                    <div class="param-value">P2P、期货</div>
+                    <div class="param-source">来源：合同第5.2条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+                <div class="param-card">
+                    <div class="param-label">⚠️ 风险预警阈值</div>
+                    <div class="param-value">-8%</div>
+                    <div class="param-source">来源：合同第7.1条款</div>
+                    <button class="param-edit-btn">编辑</button>
+                </div>
+            </div>
+            <button class="btn-primary">保存并应用参数</button>
+        </div>
+
+        <div class="card sentiment-section" id="sentimentSection" style="display: none;">
+            <div class="sentiment-header">
+                <h2>📰 舆情监控</h2>
+                <div class="sentiment-controls">
+                    <button class="btn-secondary">刷新</button>
+                    <button class="btn-secondary">设置监控</button>
+                </div>
+            </div>
+
+            <div class="sentiment-list">
+                <div class="sentiment-item negative">
+                    <div class="sentiment-content">
+                        <div class="sentiment-title">
+                            <span class="sentiment-badge negative">负面</span>
+                            XX公司涉嫌财务造假被调查
+                        </div>
+                        <div class="sentiment-text">
+                            据财经媒体报道，XX公司因涉嫌虚增营收和利润，目前正接受证监会调查。该公司为基金重仓股之一，持仓占比达8.5%。
+                        </div>
+                        <div class="sentiment-meta">
+                            <span>📅 2024-12-20 14:30</span>
+                            <span>📰 来源：财经日报</span>
+                            <span>🔥 热度：高</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sentiment-item neutral">
+                    <div class="sentiment-content">
+                        <div class="sentiment-title">
+                            <span class="sentiment-badge neutral">中性</span>
+                            YY行业监管政策调整
+                        </div>
+                        <div class="sentiment-text">
+                            监管部门发布YY行业新规，要求企业在环保和合规方面加强管理。基金持有该行业股票占比约15%，需关注政策影响。
+                        </div>
+                        <div class="sentiment-meta">
+                            <span>📅 2024-12-20 10:15</span>
+                            <span>📰 来源：监管公告</span>
+                            <span>🔥 热度：中</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sentiment-item positive">
+                    <div class="sentiment-content">
+                        <div class="sentiment-title">
+                            <span class="sentiment-badge positive">正面</span>
+                            ZZ公司获得重大技术突破
+                        </div>
+                        <div class="sentiment-text">
+                            ZZ公司在核心技术领域取得重大突破，预计将显著提升公司竞争力和盈利能力。该股票为基金持仓，占比5.2%。
+                        </div>
+                        <div class="sentiment-meta">
+                            <span>📅 2024-12-19 16:45</span>
+                            <span>📰 来源：公司公告</span>
+                            <span>🔥 热度：高</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-setup">
+                <h3>📬 推送设置 - 选择接收舆情的研究员</h3>
+                <div class="researcher-list">
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r1" checked>
+                        <label for="r1" class="researcher-name">张研究员</label>
+                    </div>
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r2" checked>
+                        <label for="r2" class="researcher-name">李研究员</label>
+                    </div>
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r3">
+                        <label for="r3" class="researcher-name">王研究员</label>
+                    </div>
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r4" checked>
+                        <label for="r4" class="researcher-name">赵研究员</label>
+                    </div>
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r5">
+                        <label for="r5" class="researcher-name">陈研究员</label>
+                    </div>
+                    <div class="researcher-item">
+                        <input type="checkbox" id="r6">
+                        <label for="r6" class="researcher-name">刘研究员</label>
+                    </div>
+                </div>
+                <button class="btn-primary" style="margin-top: 15px;">保存推送设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadedFile = document.getElementById('uploadedFile');
+        const extractBtn = document.getElementById('extractBtn');
+        let currentFile = null;
+
+        // 文件上传处理
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (file) {
+                currentFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                uploadZone.style.display = 'none';
+                uploadedFile.style.display = 'block';
+                extractBtn.disabled = false;
+            }
+        }
+
+        function removeFile() {
+            currentFile = null;
+            uploadZone.style.display = 'block';
+            uploadedFile.style.display = 'none';
+            extractBtn.disabled = true;
+            fileInput.value = '';
+
+            // 重置状态
+            document.getElementById('paramsSection').style.display = 'none';
+            document.getElementById('sentimentSection').style.display = 'none';
+            resetStatus();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function resetStatus() {
+            for (let i = 1; i <= 4; i++) {
+                const statusIcon = document.getElementById('status' + i);
+                statusIcon.className = 'status-icon pending';
+                statusIcon.textContent = '①②③④'[i-1];
+                statusIcon.parentElement.querySelector('.status-desc').textContent = '等待开始...';
+            }
+        }
+
+        function updateStatus(step, status, desc) {
+            const statusIcon = document.getElementById('status' + step);
+            const statusDesc = statusIcon.parentElement.querySelector('.status-desc');
+
+            statusIcon.className = 'status-icon ' + status;
+            statusDesc.textContent = desc;
+
+            if (status === 'completed') {
+                statusIcon.textContent = '✓';
+            }
+        }
+
+        // 开始提取
+        extractBtn.addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = '提取中...';
+
+            // 模拟提取过程
+            setTimeout(() => {
+                updateStatus(1, 'processing', '正在解析文档...');
+            }, 500);
+
+            setTimeout(() => {
+                updateStatus(1, 'completed', '文档解析完成');
+                updateStatus(2, 'processing', '正在识别参数...');
+            }, 1500);
+
+            setTimeout(() => {
+                updateStatus(2, 'completed', '参数识别完成');
+                updateStatus(3, 'processing', '正在匹配风控规则...');
+            }, 3000);
+
+            setTimeout(() => {
+                updateStatus(3, 'completed', '风控规则匹配完成');
+                updateStatus(4, 'processing', '正在启动舆情监控...');
+            }, 4500);
+
+            setTimeout(() => {
+                updateStatus(4, 'completed', '舆情监控已启动');
+                document.getElementById('paramsSection').style.display = 'block';
+                document.getElementById('sentimentSection').style.display = 'block';
+                this.textContent = '提取完成';
+
+                // 滚动到结果
+                document.getElementById('paramsSection').scrollIntoView({ behavior: 'smooth' });
+            }, 6000);
+        });
+    </script>
+</body>
+</html>
