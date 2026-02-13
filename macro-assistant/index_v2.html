@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宏观助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+                         'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 260px;
+            background-color: #2c2c2e;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3c;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background-color: #3a3a3c;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-item.active {
+            background-color: #0a84ff;
+        }
+
+        .chat-item:hover {
+            background-color: #48484a;
+        }
+
+        .chat-item.active:hover {
+            background-color: #0a84ff;
+        }
+
+        .chat-item-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-preview {
+            font-size: 12px;
+            color: #98989d;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 主聊天区域 */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e5e5e5;
+            background-color: #ffffff;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background-color: #f5f5f5;
+        }
+
+        /* 消息气泡 */
+        .message {
+            margin-bottom: 24px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .message.user .message-content {
+            background-color: #0a84ff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background-color: #ffffff;
+            color: #1d1d1f;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin: 0 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        /* 图片样式 */
+        .message-image {
+            margin-top: 12px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-image img {
+            width: 100%;
+            display: block;
+        }
+
+        /* 时间线样式 */
+        .timeline {
+            margin-top: 16px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+        }
+
+        .timeline-container {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #0a84ff, #5e5ce6);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            padding-left: 16px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -22px;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #0a84ff;
+            border: 3px solid #f9f9f9;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .timeline-dot:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
+        }
+
+        .timeline-year {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0a84ff;
+            margin-bottom: 4px;
+        }
+
+        .timeline-content {
+            font-size: 13px;
+            color: #6e6e73;
+            line-height: 1.5;
+        }
+
+        .timeline-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: #0a84ff;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 4px 10px;
+            background-color: rgba(10, 132, 255, 0.1);
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .timeline-link:hover {
+            background-color: rgba(10, 132, 255, 0.2);
+        }
+
+        .timeline-current {
+            background: linear-gradient(135deg, #5e5ce6, #0a84ff);
+        }
+
+        /* 分析段落样式 */
+        .analysis {
+            margin-top: 12px;
+            padding: 16px;
+            background-color: #f0f8ff;
+            border-left: 4px solid #0a84ff;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #1d1d1f;
+        }
+
+        .analysis-highlight {
+            font-weight: 600;
+            color: #0a84ff;
+        }
+
+        /* 输入区域 */
+        .chat-input-area {
+            padding: 20px 30px;
+            background-color: #ffffff;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .chat-input-container {
+            display: flex;
+            align-items: center;
+            background-color: #f5f5f5;
+            border-radius: 24px;
+            padding: 8px 16px;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            font-size: 15px;
+            outline: none;
+            color: #1d1d1f;
+        }
+
+        .chat-input::placeholder {
+            color: #98989d;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #0a84ff, #5e5ce6);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aeaeb2;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">宏观助手</div>
+            <div class="chat-list">
+                <div class="chat-item active">
+                    <div class="chat-item-title">宏观对创新药的影响</div>
+                    <div class="chat-item-preview">从宏观角度分析创新药板块...</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-item-title">半导体行业分析</div>
+                    <div class="chat-item-preview">当前半导体周期研判...</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-item-title">新能源车产业链</div>
+                    <div class="chat-item-preview">政策与市场双重视角...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主聊天区域 -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="chat-title">宏观对创新药的影响</div>
+            </div>
+
+            <div class="chat-messages">
+                <!-- 用户消息1 -->
+                <div class="message user">
+                    <div class="message-content">
+                        从宏观角度分析，创新药板块当前的形势
+                    </div>
+                    <div class="message-avatar">我</div>
+                </div>
+
+                <!-- 机器人回复1 -->
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        好的，首先，我先找出哪些宏观指标会影响创新药板块...
+                        <br><br>
+                        <span class="analysis-highlight">M2同比、社融同比、出口增速、投资增速</span>会综合影响资金的松紧，从而影响创新药板块。
+
+                        <div class="message-image">
+                            <img src="宏观角度看创新药.jpg" alt="宏观角度看创新药">
+                        </div>
+
+                        <div class="analysis">
+                            从图中可以看出，2023年以来，M2同比增速保持在8-10%的区间，社融同比也呈现温和增长态势。这表明当前货币环境相对宽松，为创新药企业的融资和研发投入提供了良好的资金环境。
+                            <br><br>
+                            同时，出口增速虽有波动，但整体维持正增长，反映出海外市场对国产创新药的需求持续存在。投资增速的稳定增长也预示着产业资本对创新药赛道的持续看好。
+                            <br><br>
+                            <span class="analysis-highlight">综合判断：当前宏观环境对创新药板块整体有利。</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户消息2 -->
+                <div class="message user">
+                    <div class="message-content">
+                        当前政策会有什么影响吗？
+                    </div>
+                    <div class="message-avatar">我</div>
+                </div>
+
+                <!-- 机器人回复2 -->
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        再让我找出当前的政策...
+                        <br><br>
+                        找到了！<span class="analysis-highlight">《支持创新药高质量发展的若干措施》</span>，这是面向医药全行业的改革政策，鼓励"由仿转创"。
+
+                        <div class="analysis">
+                            该政策主要包含以下几个关键点：
+                            <br><br>
+                            1. <b>加速审评审批</b>：对临床急需的创新药开辟绿色通道<br>
+                            2. <b>医保谈判机制优化</b>：提高创新药纳入医保的速度和比例<br>
+                            3. <b>研发税收优惠</b>：加大研发费用加计扣除力度<br>
+                            4. <b>支持国际化</b>：鼓励创新药企业开拓海外市场
+                        </div>
+
+                        最后，让我综合当前政策和宏观的角度，给出分析：
+
+                        <div class="analysis">
+                            <span class="analysis-highlight">政策+宏观双重利好</span>
+                            <br><br>
+                            从宏观流动性看，当前M2和社融增速稳定，资金面对创新药研发投入形成支撑；从政策面看，"由仿转创"的导向明确，医保谈判机制的优化将缩短创新药的商业化周期。
+                            <br><br>
+                            两者叠加，形成了<b>资金环境友好 + 政策红利释放</b>的双重利好格局。建议重点关注已有多款创新药进入临床III期的龙头企业，以及在肿瘤、罕见病等高壁垒领域有技术突破的标的。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户消息3 -->
+                <div class="message user">
+                    <div class="message-content">
+                        历史上是否有出现过类似的宏观环境？
+                    </div>
+                    <div class="message-avatar">我</div>
+                </div>
+
+                <!-- 机器人回复3 -->
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        首先，让我看图分析，历史上<span class="analysis-highlight">2013-2015、2019-2020、2022-2023</span>都处于宽流动性+风险偏好上行的阶段。
+                        <br><br>
+                        接着，让我再查找历史上有没有类似的政策环境...
+                        <br><br>
+                        找到了！2013-2015、2019-2020 都有支持创新药的政策<sup>[1]</sup><sup>[2]</sup>。
+                        <br><br>
+                        最后，总结政策和资金流动性，可以看出，<span class="analysis-highlight">2013-2015、2019-2020</span>这两个历史阶段与当前相似。让我给您画出时间线：
+
+                        <div class="timeline">
+                            <div class="timeline-title">历史相似阶段时间线</div>
+                            <div class="timeline-container">
+                                <div class="timeline-line"></div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-year">2013-2015</div>
+                                    <div class="timeline-content">
+                                        宽松货币政策 + 医药行业"十二五"规划支持
+                                        <br>创新药板块涨幅：135%
+                                    </div>
+                                    <a href="#" class="timeline-link" onclick="showPolicy(1); return false;">
+                                        [1] 查看政策详情：生物医药"十二五"发展规划
+                                    </a>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-year">2019-2020</div>
+                                    <div class="timeline-content">
+                                        宽信用环境 + 带量采购倒逼创新
+                                        <br>创新药板块涨幅：78%
+                                    </div>
+                                    <a href="#" class="timeline-link" onclick="showPolicy(2); return false;">
+                                        [2] 查看政策详情：关于深化审评审批制度改革鼓励药品医疗器械创新的意见
+                                    </a>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-dot timeline-current"></div>
+                                    <div class="timeline-year">2024-2025（当前）</div>
+                                    <div class="timeline-content">
+                                        稳健宽松货币 + "由仿转创"政策
+                                        <br>创新药板块处于估值修复阶段
+                                    </div>
+                                    <a href="#" class="timeline-link" onclick="showPolicy(3); return false;">
+                                        [3] 当前政策：支持创新药高质量发展的若干措施
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户消息4 -->
+                <div class="message user">
+                    <div class="message-content">
+                        当前会继续重复 2013-2015、2019-2020 这两个历史阶段的叙事逻辑吗？
+                    </div>
+                    <div class="message-avatar">我</div>
+                </div>
+
+                <!-- 机器人回复4 -->
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <div class="analysis">
+                            <span class="analysis-highlight">相似但不完全相同</span>
+                            <br><br>
+                            <b>相似之处：</b>
+                            <br>
+                            1. 宏观流动性环境均处于宽松周期<br>
+                            2. 政策端均有明确的创新导向<br>
+                            3. 市场风险偏好都在上行通道
+                            <br><br>
+                            <b>不同之处：</b>
+                            <br>
+                            1. <u>技术成熟度</u>：当前创新药企业的研发管线更加成熟，多款产品已进入商业化阶段，不再是纯粹的"讲故事"<br>
+                            2. <u>国际化程度</u>：2024年国产创新药的国际化进程显著加速，海外授权交易频繁，打开了新的估值空间<br>
+                            3. <u>医保压力</u>：当前医保基金压力较2013-2015年更大，创新药的定价和放量逻辑需要重新审视
+                            <br><br>
+                            <b style="color: #0a84ff;">投资建议：</b>
+                            <br>
+                            虽然宏观和政策环境类似，但需要<b>更加精选标的</b>。建议关注：
+                            <br>
+                            • 已有重磅品种上市且销售曲线陡峭的公司<br>
+                            • 在肿瘤、自免等大适应症领域有差异化竞争力的企业<br>
+                            • 具备海外授权潜力的Biotech
+                            <br><br>
+                            预计本轮行情的持续性会强于2019-2020（因为基本面更扎实），但弹性可能弱于2013-2015（因为市场更加理性）。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" placeholder="输入您的问题...">
+                    <button class="send-button">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 政策文档模拟数据
+        const policyDocs = {
+            1: {
+                title: "生物医药'十二五'发展规划",
+                content: "重点支持创新药物研发，加大对生物医药产业的投入...",
+                url: "#"
+            },
+            2: {
+                title: "关于深化审评审批制度改革鼓励药品医疗器械创新的意见",
+                content: "优化审评流程，加快创新药上市速度...",
+                url: "#"
+            },
+            3: {
+                title: "支持创新药高质量发展的若干措施",
+                content: "鼓励'由仿转创'，加大研发投入支持力度...",
+                url: "#"
+            }
+        };
+
+        // 显示政策详情
+        function showPolicy(id) {
+            const policy = policyDocs[id];
+            alert(`政策文档：${policy.title}\n\n${policy.content}\n\n注：这是模拟数据，实际应用中会链接到真实文档。`);
+        }
+
+        // 聊天输入处理
+        const chatInput = document.querySelector('.chat-input');
+        const sendButton = document.querySelector('.send-button');
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                // 这里可以添加发送消息的逻辑
+                console.log('发送消息:', message);
+                chatInput.value = '';
+                // 实际应用中会调用API并显示新消息
+            }
+        }
+
+        // 平滑滚动到底部
+        const chatMessages = document.querySelector('.chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // 侧边栏聊天切换
+        const chatItems = document.querySelectorAll('.chat-item');
+        chatItems.forEach(item => {
+            item.addEventListener('click', function() {
+                chatItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
