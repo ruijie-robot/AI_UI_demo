@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组合模拟回测分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* 窗口2：折线图 - 左上 */
+        .chart-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .window-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e8ecf1;
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .chart-image {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .time-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #e74c3c;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+        }
+
+        .time-marker:hover {
+            transform: scale(1.3);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.6);
+        }
+
+        .time-marker.active {
+            background: #c0392b;
+            transform: scale(1.3);
+        }
+
+        .time-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .time-marker:hover .time-label {
+            opacity: 1;
+        }
+
+        /* 窗口3：分析内容 - 左下 */
+        .analysis-window {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .analysis-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .analysis-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #95a5a6;
+        }
+
+        .analysis-placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .analysis-section {
+            margin-bottom: 24px;
+        }
+
+        .analysis-section h3 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-left: 12px;
+            border-left: 4px solid #3498db;
+        }
+
+        .analysis-section p {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 12px;
+        }
+
+        .reference {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 0 2px;
+            transition: all 0.2s;
+        }
+
+        .reference:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+        }
+
+        /* 窗口1：聊天侧边栏 */
+        .chat-sidebar {
+            width: 420px;
+            background: white;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-bot {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message-user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-bot .message-bubble {
+            background: white;
+            color: #2c3e50;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .drawdown-definition {
+            background: #ecf0f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 13px;
+            color: #34495e;
+        }
+
+        .drawdown-list {
+            background: #fff3cd;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        .drawdown-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .drawdown-list li {
+            padding: 6px 0;
+            color: #856404;
+            font-size: 13px;
+        }
+
+        .drawdown-list li:before {
+            content: "📍 ";
+            margin-right: 4px;
+        }
+
+        .portfolio-info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .portfolio-info strong {
+            color: #1565c0;
+        }
+
+        /* 引用模态框 */
+        .reference-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reference-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #95a5a6;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- 窗口2：折线图 -->
+            <div class="chart-window">
+                <div class="window-title">回测折线图</div>
+                <div class="chart-container">
+                    <div class="chart-wrapper" id="chartWrapper">
+                        <img src="折线图.jpg" alt="回测折线图" class="chart-image" id="chartImage">
+                        <!-- 时间标记点将通过JavaScript动态添加 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 窗口3：分析内容 -->
+            <div class="analysis-window">
+                <div class="window-title">板块分析</div>
+                <div class="analysis-content" id="analysisContent">
+                    <div class="analysis-placeholder">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                        </svg>
+                        <p>点击折线图上的回撤标记点查看分析详情</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 窗口1：聊天侧边栏 -->
+        <div class="chat-sidebar">
+            <div class="chat-header">
+                <h2>组合回测分析</h2>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message message-user">
+                    <div class="message-bubble">
+                        帮我分析我的模拟投资组合"稳健成长型组合"的历史的回撤
+                    </div>
+                </div>
+                <div class="message message-bot">
+                    <div class="message-bubble">
+                        好的，让我先查看您的模拟投资组合"稳健成长型组合"的配置信息。
+                        <div class="portfolio-info">
+                            <strong>组合名称：</strong>稳健成长型组合<br>
+                            <strong>创建时间：</strong>2017年1月<br>
+                            <strong>当前配置：</strong><br>
+                            • 黄金板块：60% (中金黄金、山东黄金、紫金矿业)<br>
+                            • TMT板块：40% (立讯精密、中兴通讯、京东方A)<br>
+                            <strong>调仓频率：</strong>季度再平衡
+                        </div>
+                        现在，我首先定义回撤的标准。
+                        <div class="drawdown-definition">
+                            <strong>回撤定义：</strong><br>
+                            回撤是指在某一时期内，投资组合净值从最高点到最低点的下跌幅度。最大回撤是指在选定周期内任一历史时点往后推，产品净值走到最低点时的收益率回撤幅度的最大值。<br><br>
+                            <strong>计算公式：</strong><br>
+                            回撤率 = (峰值净值 - 谷值净值) / 峰值净值 × 100%
+                        </div>
+                        其次，让我查看您的回测当中有哪些回撤的时间点，并在图中标注出来。
+                        <div class="drawdown-list">
+                            <strong>主要回撤时间点：</strong>
+                            <ul>
+                                <li><strong>2018年10月</strong> - 回撤幅度: -15.3%</li>
+                                <li><strong>2020年3月</strong> - 回撤幅度: -22.7%</li>
+                                <li><strong>2022年4月</strong> - 回撤幅度: -18.9%</li>
+                            </ul>
+                        </div>
+                        最后，让我调用历史文档分析这些时间点，在黄金和TMT板块都发生了什么，他们相对于大盘都出现了什么优势和劣势。
+                        <div class="drawdown-definition" style="margin-top: 12px;">
+                            <strong>相对大盘表现分析：</strong><br>
+                            您的"稳健成长型组合"在回测期内展现出优于大盘的风险调整后收益。三次主要回撤中，组合平均回撤18.97%，而同期上证500平均回撤23.45%，相对优势明显。<br><br>
+                            <strong>优势：</strong>黄金板块在市场恐慌时期（如2020年3月后期）展现出避险价值；TMT板块在经济复苏期（如2020年Q2-Q4）提供了显著的弹性。<br><br>
+                            <strong>劣势：</strong>在加息周期（如2018、2022）中，黄金和TMT同时承压，缺乏有效对冲；60:40的静态配置在不同宏观环境下缺乏灵活性。<br><br>
+                            请点击图表上的标记点查看各时期的详细分析。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引用模态框 -->
+    <div class="reference-modal" id="referenceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">引用文档</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 时间标记点数据（相对于图片的百分比位置，精确定位在曲线上）
+        const timeMarkers = [
+            {
+                date: '2018-10',
+                label: '2018年10月',
+                left: '35%',
+                top: '52%',
+                analysis: {
+                    title: '2018年10月回撤分析',
+                    sections: [
+                        {
+                            title: '1. TMT板块基本面分析',
+                            content: '2018年10月，全球科技股遭遇大幅调整，纳斯达克指数单月下跌9.2%。中美贸易摩擦升级，特别是针对高科技领域的限制措施，导致TMT板块大幅回撤。<span class="reference" data-ref="1">[1]</span>',
+                        },
+                        {
+                            title: '2. TMT板块技术面分析',
+                            content: '国内5G建设进度不及预期，半导体国产替代进程受阻，相关标的估值泡沫破裂。创业板指数跌破支撑位，技术性破位引发程序化交易抛售。<span class="reference" data-ref="2">[2]</span>',
+                        },
+                        {
+                            title: '3. TMT板块资金面分析',
+                            content: '北向资金单月净流出超过300亿元，外资对中国科技股的配置需求明显下降。公募基金TMT持仓比例从18%降至14%，机构资金大幅撤离成长板块。',
+                        },
+                        {
+                            title: '4. 黄金板块宏观环境',
+                            content: '美联储在2018年进入加息周期尾声，但美元指数依然强势，导致黄金价格承压。10月美联储再次加息25个基点，市场对实际利率上行的担忧压制了黄金的避险需求。<span class="reference" data-ref="3">[3]</span>',
+                        },
+                        {
+                            title: '5. 黄金板块资金流向',
+                            content: '中国黄金ETF持仓量下降12%，显示机构资金流出明显。全球黄金ETF持仓量环比下降8%，投资者对黄金配置需求减弱，资金转向美债等固定收益产品。',
+                        },
+                        {
+                            title: '6. 黄金板块技术走势',
+                            content: '黄金价格跌破1200美元/盎司关键支撑位，MACD指标死叉，技术面呈现空头排列。国内黄金期货主力合约跌破270元/克，创年内新低。',
+                        },
+                        {
+                            title: '7. 组合表现总结',
+                            content: '该组合在此期间回撤15.3%，略好于创业板指数的18.6%回撤，但仍未能有效对冲市场风险。黄金板块的避险属性在强势美元环境下失效，未能起到保护作用。',
+                        }
+                    ]
+                }
+            },
+            {
+                date: '2020-03',
+                label: '2020年3月',
+                left: '55%',
+                top: '68%',
+                analysis: {
+                    title: '2020年3月回撤分析',
+                    sections: [
+                        {
+                            title: '1. TMT板块疫情冲击',
+                            content: '新冠疫情爆发初期，全球市场恐慌性抛售，TMT板块遭遇无差别杀跌。VIX恐慌指数飙升至82，创2008年金融危机以来新高，市场流动性枯竭。<span class="reference" data-ref="4">[4]</span>',
+                        },
+                        {
+                            title: '2. TMT板块供应链分析',
+                            content: '供应链中断风险加剧，苹果、华为等供应链厂商大面积停工。富士康复工率不足30%，立讯精密等核心供应商产能利用率骤降，市场担忧全年业绩受损。<span class="reference" data-ref="5">[5]</span>',
+                        },
+                        {
+                            title: '3. TMT板块结构分化',
+                            content: '板块内部严重分化，"宅经济"和远程办公概念股逆势上涨，云计算、在线教育、游戏股涨幅超过20%。传统硬件制造商则跌幅超过30%，呈现冰火两重天。',
+                        },
+                        {
+                            title: '4. 黄金板块流动性危机',
+                            content: '疫情导致全球美元流动性极度收紧，市场抛售一切资产换取现金，黄金短期内也未能幸免。3月中旬金价一度跌破1450美元/盎司，单周跌幅超过12%。<span class="reference" data-ref="6">[6]</span>',
+                        },
+                        {
+                            title: '5. 黄金板块政策转折',
+                            content: '美联储紧急降息至零利率并推出无限量QE，欧央行、日本央行、中国央行纷纷跟进。全球流动性泛滥引发通胀预期，黄金避险属性和抗通胀属性重新得到市场认可。',
+                        },
+                        {
+                            title: '6. 黄金板块价格反转',
+                            content: '金价从3月低点1450美元反弹至6月的1800美元，涨幅超过24%。全球黄金ETF持仓量单季度增加623吨，创历史最大增幅，机构资金大举配置黄金资产。',
+                        },
+                        {
+                            title: '7. 组合表现总结',
+                            content: '该组合在3月最大回撤22.7%，为三个回撤期中最深。但随后V型反转，4-6月累计收益达到35%，展现出较强的弹性。黄金在后期起到明显的对冲作用。',
+                        }
+                    ]
+                }
+            },
+            {
+                date: '2022-04',
+                label: '2022年4月',
+                left: '80%',
+                top: '58%',
+                analysis: {
+                    title: '2022年4月回撤分析',
+                    sections: [
+                        {
+                            title: '1. TMT板块加息冲击',
+                            content: '美联储开启激进加息周期，流动性收紧导致高估值成长股大幅回调。5月议息会议加息50个基点，创2000年以来最大单次加息幅度，科技股估值体系崩塌。<span class="reference" data-ref="7">[7]</span>',
+                        },
+                        {
+                            title: '2. TMT板块地缘风险',
+                            content: '俄乌冲突引发的供应链担忧进一步打压科技股情绪。全球半导体供应链面临重构压力，稀有气体供应紧张推高芯片制造成本，行业盈利能力面临考验。',
+                        },
+                        {
+                            title: '3. TMT板块监管压力',
+                            content: '国内互联网平台监管持续，中概股信任危机爆发。阿里、腾讯等龙头企业市值较高点缩水超过50%，美国推动《外国公司问责法案》，中概股面临退市风险。',
+                        },
+                        {
+                            title: '4. TMT板块供需矛盾',
+                            content: '芯片短缺问题依然严峻，汽车、消费电子等下游需求疲软，半导体行业进入去库存周期。存储芯片价格环比下跌15%，板块盈利预期大幅下调。',
+                        },
+                        {
+                            title: '5. 黄金板块利率压制',
+                            content: '美联储鹰派加息预期导致美债收益率飙升，实际利率快速上行压制金价。4月美国10年期国债收益率突破2.9%，实际利率转正，黄金失去利率优势。<span class="reference" data-ref="8">[8]</span>',
+                        },
+                        {
+                            title: '6. 黄金板块美元走强',
+                            content: '美元指数强势反弹至101，创近20年新高，进一步打压以美元计价的黄金。强美元周期下，新兴市场货币贬值，当地黄金需求受到抑制。',
+                        },
+                        {
+                            title: '7. 组合表现总结',
+                            content: '该组合在4月回撤18.9%，介于前两次回撤之间。TMT和黄金均承压，组合缺乏有效对冲工具。建议在强美元+加息周期下，考虑配置能源或价值股对冲成长股风险。',
+                        }
+                    ]
+                }
+            }
+        ];
+
+        // 引用文档数据
+        const references = {
+            '1': {
+                title: '中美贸易摩擦对科技行业的影响分析',
+                content: '2018年10月，美国商务部将福建晋华、长江存储等多家中国企业列入出口管制实体清单，禁止美国企业向其出售技术和产品。这一举措严重影响了中国半导体产业的发展进程，A股半导体板块指数单月下跌18.6%。分析师普遍认为，这标志着中美科技竞争进入白热化阶段，国产替代需求虽然长期利好，但短期内技术断供风险导致市场恐慌性抛售。'
+            },
+            '2': {
+                title: '2018年全球科技股调整报告',
+                content: 'FAANG五大科技巨头在2018年第四季度市值蒸发超过1万亿美元。苹果iPhone销量不及预期，Facebook陷入隐私泄露丑闻，亚马逊和Netflix增长放缓，谷歌面临反垄断调查。全球科技股估值泡沫破裂，投资者对高估值成长股的容忍度大幅下降，资金转向防御性板块。A股TMT板块作为全球科技产业链的一部分，难以独善其身。'
+            },
+            '3': {
+                title: '美联储加息周期对黄金市场的影响',
+                content: '2018年，美联储全年加息4次，联邦基金利率从1.5%上升至2.5%。加息导致持有黄金的机会成本上升，同时美元指数走强至97，双重压力下金价全年下跌1.6%。全球最大黄金ETF SPDR持仓量从年初的848吨下降至746吨，反映机构投资者对黄金配置需求的减弱。不过，随着美联储在2019年转向降息，黄金在随后两年迎来牛市。'
+            },
+            '4': {
+                title: 'COVID-19疫情对全球供应链的冲击',
+                content: '2020年3月，中国和东南亚制造业大面积停工，全球电子产业供应链遭遇严重中断。苹果宣布iPhone产量将下降10%，富士康、立讯精密等代工厂复工率不足50%。市场担忧供应链中断将导致全年业绩大幅下滑，TMT板块在3月遭遇恐慌性抛售。但随后"宅经济"需求爆发，PC、服务器、云计算需求激增，板块在二季度V型反转。'
+            },
+            '5': {
+                title: '远程办公和云计算需求爆发式增长',
+                content: '疫情期间，全球远程办公用户数量激增300%，Zoom、Microsoft Teams等协作软件日活用户创历史新高。云计算巨头业绩超预期，AWS、Azure、阿里云季度增速均超过60%。A股云计算、SaaS、网络安全板块在二季度涨幅超过40%，成为疫情期间表现最好的科技细分领域。这一趋势验证了数字化转型的长期逻辑，也为TMT板块后续走强奠定基础。'
+            },
+            '6': {
+                title: '全球央行量化宽松与黄金牛市',
+                content: '2020年3月，美联储宣布无限量QE，资产负债表在三个月内扩张3万亿美元。欧央行、日本央行、中国央行纷纷跟进宽松政策。全球流动性泛滥引发通胀预期，实际利率转负，黄金避险和抗通胀属性凸显。金价从3月低点1450美元反弹至8月的2075美元历史新高，涨幅超过40%。全球黄金ETF持仓量增加1300吨，创历史最大增幅。'
+            },
+            '7': {
+                title: '2022年美联储加息与科技股估值重估',
+                content: '2022年，美联储开启40年来最激进的加息周期，全年加息7次共425个基点。流动性收紧导致无风险利率飙升，DCF估值模型下科技股内在价值大幅下降。纳斯达克指数全年下跌33%，Meta、英伟达等科技巨头跌幅超过50%。A股TMT板块同样遭遇估值杀，创业板指数年度跌幅29%，市场风格转向低估值价值股。'
+            },
+            '8': {
+                title: '强美元周期对黄金价格的压制',
+                content: '2022年，美元指数从年初95上涨至114，创20年新高。强美元使以美元计价的黄金对其他货币持有者更加昂贵，抑制全球黄金需求。同时，美债实际收益率从-1%快速上升至2%，持有黄金的机会成本显著上升。尽管地缘政治风险和通胀高企理论上利好黄金，但利率因素占据主导，金价在二季度从2000美元回落至1680美元。'
+            }
+        };
+
+        // 初始化时间标记点
+        function initTimeMarkers() {
+            const wrapper = document.getElementById('chartWrapper');
+            const img = document.getElementById('chartImage');
+
+            // 等待图片加载完成
+            img.onload = function() {
+                timeMarkers.forEach((marker, index) => {
+                    const markerEl = document.createElement('div');
+                    markerEl.className = 'time-marker';
+                    markerEl.style.left = marker.left;
+                    markerEl.style.top = marker.top;
+                    markerEl.setAttribute('data-index', index);
+
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'time-label';
+                    labelEl.textContent = marker.label;
+                    markerEl.appendChild(labelEl);
+
+                    markerEl.addEventListener('click', function() {
+                        showAnalysis(index);
+                        // 更新活动状态
+                        document.querySelectorAll('.time-marker').forEach(m => m.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+
+                    wrapper.appendChild(markerEl);
+                });
+            };
+
+            // 如果图片已经加载完成，立即触发
+            if (img.complete) {
+                img.onload();
+            }
+        }
+
+        // 显示分析内容
+        function showAnalysis(index) {
+            const marker = timeMarkers[index];
+            const content = document.getElementById('analysisContent');
+
+            let html = `<div class="analysis-section"><h3>${marker.analysis.title}</h3></div>`;
+
+            marker.analysis.sections.forEach(section => {
+                html += `
+                    <div class="analysis-section">
+                        <h3>${section.title}</h3>
+                        <p>${section.content}</p>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+
+            // 为引用添加点击事件
+            content.querySelectorAll('.reference').forEach(ref => {
+                ref.addEventListener('click', function() {
+                    const refId = this.getAttribute('data-ref');
+                    showReference(refId);
+                });
+            });
+        }
+
+        // 显示引用模态框
+        function showReference(refId) {
+            const ref = references[refId];
+            if (!ref) return;
+
+            document.getElementById('modalTitle').textContent = ref.title;
+            document.getElementById('modalBody').textContent = ref.content;
+            document.getElementById('referenceModal').classList.add('active');
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('referenceModal').classList.remove('active');
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('referenceModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 初始化
+        initTimeMarkers();
+    </script>
+</body>
+</html>
