@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宏观数据推送 - Outlook</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f3f2f1;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Outlook顶部导航栏 */
+        .outlook-header {
+            background: #0078d4;
+            color: white;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .outlook-header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .outlook-logo {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #0078d4;
+            font-size: 18px;
+        }
+
+        /* 主容器 */
+        .outlook-container {
+            display: flex;
+            height: calc(100vh - 48px);
+        }
+
+        /* 左侧文件夹栏 */
+        .folder-pane {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #edebe9;
+            overflow-y: auto;
+        }
+
+        .folder-header {
+            padding: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #605e5c;
+            text-transform: uppercase;
+        }
+
+        .folder-list {
+            list-style: none;
+        }
+
+        .folder-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+            color: #323130;
+            font-size: 14px;
+        }
+
+        .folder-item:hover {
+            background: #f3f2f1;
+        }
+
+        .folder-item.active {
+            background: #edebe9;
+            font-weight: 600;
+        }
+
+        .folder-item::before {
+            content: "📁";
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .folder-item.inbox::before {
+            content: "📥";
+        }
+
+        .folder-item.sent::before {
+            content: "📤";
+        }
+
+        .folder-item.drafts::before {
+            content: "📝";
+        }
+
+        .folder-item.deleted::before {
+            content: "🗑️";
+        }
+
+        /* 中间邮件列表 */
+        .email-list-pane {
+            width: 400px;
+            background: white;
+            border-right: 1px solid #edebe9;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .email-list-header {
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .email-list-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+        }
+
+        .email-count {
+            font-size: 12px;
+            color: #605e5c;
+        }
+
+        .email-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .email-item {
+            padding: 16px;
+            border-bottom: 1px solid #edebe9;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .email-item:hover {
+            background: #f3f2f1;
+        }
+
+        .email-item.active {
+            background: #e1dfdd;
+        }
+
+        .email-item.unread {
+            background: #f5f9fc;
+            font-weight: 600;
+        }
+
+        .email-sender {
+            font-size: 14px;
+            color: #323130;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .email-time {
+            font-size: 12px;
+            color: #605e5c;
+            font-weight: 400;
+        }
+
+        .email-subject {
+            font-size: 13px;
+            color: #323130;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .email-preview {
+            font-size: 12px;
+            color: #605e5c;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .unread-indicator {
+            width: 8px;
+            height: 8px;
+            background: #0078d4;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        /* 右侧邮件阅读区 */
+        .email-reading-pane {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .email-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #edebe9;
+        }
+
+        .email-subject-line {
+            font-size: 24px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 16px;
+        }
+
+        .email-meta {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .sender-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0078d4 0%, #00bcf2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+
+        .sender-info {
+            flex: 1;
+        }
+
+        .sender-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #323130;
+        }
+
+        .sender-email {
+            font-size: 12px;
+            color: #605e5c;
+        }
+
+        .email-date {
+            font-size: 12px;
+            color: #605e5c;
+        }
+
+        .email-body {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            background: #faf9f8;
+        }
+
+        .email-content {
+            background: white;
+            padding: 32px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stock-section {
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid #edebe9;
+        }
+
+        .stock-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .stock-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #edebe9;
+        }
+
+        .stock-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+        }
+
+        .stock-code {
+            font-size: 14px;
+            color: #605e5c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stock-price {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+        }
+
+        .price-change {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .price-change.up {
+            color: #107c10;
+            background: #dff6dd;
+        }
+
+        .price-change.down {
+            color: #d13438;
+            background: #fde7e9;
+        }
+
+        .info-item {
+            margin-bottom: 16px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #605e5c;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .info-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #323130;
+        }
+
+        .highlight-box {
+            background: #fff4ce;
+            border-left: 4px solid #ffb900;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 2px;
+        }
+
+        .highlight-box .info-content {
+            margin: 0;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tag.macro {
+            background: #e1f5fe;
+            color: #0277bd;
+        }
+
+        .tag.policy {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .tag.industry {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .tag.market {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f2f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c8c6c4;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a19f9d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Outlook顶部导航 -->
+    <div class="outlook-header">
+        <div class="outlook-logo">O</div>
+        <h1>Outlook</h1>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="outlook-container">
+        <!-- 左侧文件夹 -->
+        <div class="folder-pane">
+            <div class="folder-header">收藏夹</div>
+            <ul class="folder-list">
+                <li class="folder-item inbox active">收件箱</li>
+                <li class="folder-item">已加星标</li>
+            </ul>
+            <div class="folder-header">文件夹</div>
+            <ul class="folder-list">
+                <li class="folder-item sent">已发送邮件</li>
+                <li class="folder-item drafts">草稿箱</li>
+                <li class="folder-item deleted">已删除邮件</li>
+                <li class="folder-item">垃圾邮件</li>
+                <li class="folder-item">归档</li>
+            </ul>
+        </div>
+
+        <!-- 中间邮件列表 -->
+        <div class="email-list-pane">
+            <div class="email-list-header">
+                <div>
+                    <div class="email-list-title">收件箱</div>
+                    <div class="email-count">5封邮件</div>
+                </div>
+            </div>
+            <div class="email-list">
+                <div class="email-item unread active">
+                    <div class="email-sender">
+                        <span><span class="unread-indicator"></span>宏观研究部</span>
+                        <span class="email-time">8:30 AM</span>
+                    </div>
+                    <div class="email-subject">【每日推送】持仓股票宏观数据更新 - 2026年2月13日</div>
+                    <div class="email-preview">过去24小时内，您关注的4只持仓股票相关宏观数据和市场信息更新...</div>
+                </div>
+                <div class="email-item">
+                    <div class="email-sender">
+                        <span>策略研究部</span>
+                        <span class="email-time">昨天</span>
+                    </div>
+                    <div class="email-subject">2月市场策略月报</div>
+                    <div class="email-preview">2月市场展望：关注政策预期与资金面变化...</div>
+                </div>
+                <div class="email-item">
+                    <div class="email-sender">
+                        <span>行业分析团队</span>
+                        <span class="email-time">2天前</span>
+                    </div>
+                    <div class="email-subject">消费行业周报：春节消费数据点评</div>
+                    <div class="email-preview">春节期间消费数据超预期，重点关注化妆品、白酒板块...</div>
+                </div>
+                <div class="email-item">
+                    <div class="email-sender">
+                        <span>固定收益部</span>
+                        <span class="email-time">3天前</span>
+                    </div>
+                    <div class="email-subject">利率债周报</div>
+                    <div class="email-preview">央行本周公开市场操作综述...</div>
+                </div>
+                <div class="email-item">
+                    <div class="email-sender">
+                        <span>宏观研究部</span>
+                        <span class="email-time">4天前</span>
+                    </div>
+                    <div class="email-subject">【每日推送】持仓股票宏观数据更新 - 2026年2月9日</div>
+                    <div class="email-preview">过去24小时内，您关注的持仓股票相关宏观数据更新...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧邮件阅读区 -->
+        <div class="email-reading-pane">
+            <div class="email-header">
+                <div class="email-subject-line">【每日推送】持仓股票宏观数据更新 - 2026年2月13日</div>
+                <div class="email-meta">
+                    <div class="sender-avatar">宏</div>
+                    <div class="sender-info">
+                        <div class="sender-name">宏观研究部</div>
+                        <div class="sender-email">macro-research@fund.com</div>
+                    </div>
+                    <div class="email-date">今天 上午8:30</div>
+                </div>
+            </div>
+
+            <div class="email-body">
+                <div class="email-content">
+                    <p style="margin-bottom: 24px; color: #605e5c; line-height: 1.6;">
+                        尊敬的基金经理，<br><br>
+                        以下是过去24小时内与您的持仓股票相关的宏观数据、政策动态和市场信息汇总。
+                    </p>
+
+                    <!-- 珀莱雅 -->
+                    <div class="stock-section">
+                        <div class="stock-header">
+                            <div>
+                                <div class="stock-name">珀莱雅</div>
+                                <div class="stock-code">603605.SH</div>
+                            </div>
+                            <div class="stock-price">
+                                <span class="price-value">¥128.45</span>
+                                <span class="price-change up">+2.35%</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <span class="tag macro">宏观数据</span>
+                            <span class="tag policy">政策动态</span>
+                            <span class="tag industry">行业资讯</span>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">消费数据更新</div>
+                            <div class="info-content">
+                                国家统计局昨日公布1月社会消费品零售总额同比增长5.8%，其中化妆品类零售额同比增长8.2%，较上月提升1.5个百分点。春节期间线上化妆品销售额同比增长12.3%，高端护肤品类增速领跑，显示消费升级趋势延续。
+                            </div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="info-label">重点关注</div>
+                            <div class="info-content">
+                                央行昨日发布《2025年第四季度货币政策执行报告》，强调"促进消费持续恢复"。M2同比增长9.7%，社融存量同比增长9.5%，流动性环境保持合理充裕，利好消费板块估值修复。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">行业政策</div>
+                            <div class="info-content">
+                                商务部联合12部门发布《关于促进化妆品消费的指导意见》，提出支持国产品牌创新、完善行业标准、推动线上线下融合等措施。券商研报指出，政策有望推动国货美妆市场份额从目前的56%提升至65%以上。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">市场情绪</div>
+                            <div class="info-content">
+                                北向资金昨日净买入珀莱雅1.23亿元，连续5个交易日净流入。机构调研频次环比增加40%，市场对公司新品红宝石精华的销售预期乐观，预计Q1收入增速有望达到35%。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 潍柴动力 -->
+                    <div class="stock-section">
+                        <div class="stock-header">
+                            <div>
+                                <div class="stock-name">潍柴动力</div>
+                                <div class="stock-code">000338.SZ</div>
+                            </div>
+                            <div class="stock-price">
+                                <span class="price-value">¥16.82</span>
+                                <span class="price-change down">-1.18%</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <span class="tag macro">宏观数据</span>
+                            <span class="tag policy">政策动态</span>
+                            <span class="tag industry">行业资讯</span>
+                            <span class="tag market">市场情绪</span>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">固定资产投资数据</div>
+                            <div class="info-content">
+                                1月全国固定资产投资同比增长4.2%，其中基建投资增长6.8%，制造业投资增长8.1%。重型机械设备需求指数环比上升3.2个百分点，显示实体经济投资意愿增强，利好工程机械及重卡销售。
+                            </div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="info-label">政策支持</div>
+                            <div class="info-content">
+                                国务院常务会议审议通过《推动大规模设备更新和消费品以旧换新行动方案》，提出到2027年工业设备投资规模较2023年增长25%以上。商用车以旧换新补贴标准提高至1.5万元/辆，预计带动重卡需求增长15-20%。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">出口数据</div>
+                            <div class="info-content">
+                                海关总署数据显示，1月机械设备出口额同比增长7.3%。"一带一路"沿线国家重卡出口量同比增长18.6%，潍柴动力在东南亚和中东市场份额提升至23.5%，海外业务增长势头良好。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">原材料价格</div>
+                            <div class="info-content">
+                                钢材价格指数较上月下降2.3%，铜价回落1.8%，原材料成本压力缓解有利于毛利率改善。行业协会预计Q1重卡销量同比增长12%，但受春节因素影响，实际交付将集中在2-3月。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 思源电气 -->
+                    <div class="stock-section">
+                        <div class="stock-header">
+                            <div>
+                                <div class="stock-name">思源电气</div>
+                                <div class="stock-code">002028.SZ</div>
+                            </div>
+                            <div class="stock-price">
+                                <span class="price-value">¥45.67</span>
+                                <span class="price-change up">+3.42%</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <span class="tag macro">宏观数据</span>
+                            <span class="tag policy">政策动态</span>
+                            <span class="tag industry">行业资讯</span>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">电力投资数据</div>
+                            <div class="info-content">
+                                国家能源局公布1月全国电力投资完成额873亿元，同比增长15.2%。其中电网基本建设投资同比增长21.5%，特高压及配电网改造投资占比提升至68%，为近三年最高水平。
+                            </div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="info-label">重大政策</div>
+                            <div class="info-content">
+                                国家发改委、国家能源局联合印发《关于加强新型电力系统建设的指导意见》，明确"十五五"期间电网投资规模不低于3.5万亿元。重点支持特高压、智能电网、储能配套设施建设，思源电气作为GIS设备龙头将直接受益。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">新能源配套需求</div>
+                            <div class="info-content">
+                                1月新增风电装机6.2GW，光伏装机15.8GW，均超市场预期。新能源并网需求持续旺盛，配套变压器及开关设备订单饱满。公司昨日公告中标国家电网2026年第一批设备采购项目，金额达12.3亿元。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">技术进展</div>
+                            <div class="info-content">
+                                公司自主研发的1100kV特高压GIS设备通过国家鉴定，技术指标达到国际领先水平。该产品将应用于西北-华东特高压工程，预计未来三年相关订单超过50亿元，毛利率较传统产品高8-10个百分点。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 江苏银行 -->
+                    <div class="stock-section">
+                        <div class="stock-header">
+                            <div>
+                                <div class="stock-name">江苏银行</div>
+                                <div class="stock-code">600919.SH</div>
+                            </div>
+                            <div class="stock-price">
+                                <span class="price-value">¥9.18</span>
+                                <span class="price-change up">+1.77%</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <span class="tag macro">宏观数据</span>
+                            <span class="tag policy">政策动态</span>
+                            <span class="tag market">市场情绪</span>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">信贷数据</div>
+                            <div class="info-content">
+                                央行公布1月新增人民币贷款4.92万亿元，创历史同期新高，同比多增5100亿元。其中企业中长期贷款新增2.49万亿元，同比多增3800亿元，显示实体经济融资需求强劲。居民贷款新增1.21万亿元，房贷占比回升至62%。
+                            </div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="info-label">货币政策基调</div>
+                            <div class="info-content">
+                                央行在货币政策执行报告中强调"保持流动性合理充裕"，LPR保持不变，但通过降准释放长期流动性。1年期LPR为3.45%，5年期以上LPR为3.95%。分析师预计Q1可能再次降准25-50BP，进一步降低银行负债成本。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">区域经济数据</div>
+                            <div class="info-content">
+                                江苏省统计局公布1月PMI指数为52.3，连续4个月位于扩张区间。规模以上工业增加值同比增长7.8%，高于全国平均2.1个百分点。长三角经济活跃度提升利好区域性银行资产质量和业务拓展。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">资产质量指标</div>
+                            <div class="info-content">
+                                监管部门数据显示，1月商业银行不良贷款率为1.59%，较上季末下降0.02个百分点。江苏区域不良率为0.96%，处于行业较低水平。房地产风险继续收敛，对公不良生成率环比下降0.15个百分点。
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">估值修复</div>
+                            <div class="info-content">
+                                银行板块昨日整体上涨1.8%，江苏银行当前PB仅0.68倍，处于历史10%分位数以下。机构观点认为，在经济预期改善、资产质量稳定、股息率高达5.2%的背景下，估值修复空间显著，建议增配。
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #edebe9; color: #605e5c; font-size: 13px; line-height: 1.6;">
+                        <strong>风险提示：</strong>以上信息仅供参考，不构成投资建议。宏观政策存在不确定性，市场情绪可能快速变化，请结合实际情况做出投资决策。<br><br>
+                        <strong>宏观研究部</strong><br>
+                        2026年2月13日
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
