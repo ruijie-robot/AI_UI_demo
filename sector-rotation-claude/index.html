@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI辅助预测板块轮动</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            background: #f5f5f5;
+        }
+
+        /* 左侧侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: #2c2c2c;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1a1a1a;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .conversation-item.active {
+            background: #3a3a3a;
+        }
+
+        .conversation-item:hover {
+            background: #3a3a3a;
+        }
+
+        .conversation-item-title {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .conversation-item-time {
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* 主聊天区域 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .chat-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .message {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .ai-avatar {
+            background: #34c759;
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: 800px;
+        }
+
+        .message-role {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .message-text {
+            line-height: 1.7;
+            color: #444;
+        }
+
+        .message-text p {
+            margin-bottom: 12px;
+        }
+
+        .message-text strong {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .sector-table {
+            margin: 20px 0;
+            width: 100%;
+            border-collapse: collapse;
+            background: #f9f9f9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .sector-table th,
+        .sector-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sector-table th {
+            background: #f0f0f0;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sector-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .trend-up {
+            color: #34c759;
+            font-weight: 600;
+        }
+
+        .trend-down {
+            color: #ff3b30;
+            font-weight: 600;
+        }
+
+        .trend-neutral {
+            color: #888;
+        }
+
+        .highlight-box {
+            background: #f0f7ff;
+            border-left: 4px solid #4a90e2;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .highlight-box-title {
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .sector-heat-map {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .sector-card {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .sector-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .sector-hot {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+        }
+
+        .sector-warm {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            color: white;
+        }
+
+        .sector-cool {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+        }
+
+        .sector-cold {
+            background: linear-gradient(135deg, #90caf9 0%, #42a5f5 100%);
+            color: white;
+        }
+
+        .sector-card-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .sector-card-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .sector-card-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .recommendation-list {
+            margin: 15px 0;
+        }
+
+        .recommendation-item {
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #4a90e2;
+        }
+
+        .recommendation-item strong {
+            color: #1a1a1a;
+        }
+
+        .chat-input-area {
+            padding: 20px 30px;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #4a90e2;
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .send-button:hover {
+            background: #357abd;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">AI板块轮动助手</div>
+            <div class="sidebar-subtitle">智能预测 · 精准决策</div>
+        </div>
+        <div class="conversation-list">
+            <div class="conversation-item active">
+                <div class="conversation-item-title">2026年Q1板块轮动预测</div>
+                <div class="conversation-item-time">刚刚</div>
+            </div>
+            <div class="conversation-item">
+                <div class="conversation-item-title">新能源板块分析</div>
+                <div class="conversation-item-time">2小时前</div>
+            </div>
+            <div class="conversation-item">
+                <div class="conversation-item-title">科技板块资金流向</div>
+                <div class="conversation-item-time">昨天</div>
+            </div>
+            <div class="conversation-item">
+                <div class="conversation-item-title">消费板块周期分析</div>
+                <div class="conversation-item-time">3天前</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主聊天区域 -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-title">AI辅助预测板块轮动</div>
+        </div>
+
+        <div class="chat-messages">
+            <!-- 用户消息1 -->
+            <div class="message">
+                <div class="message-avatar user-avatar">我</div>
+                <div class="message-content">
+                    <div class="message-role">用户</div>
+                    <div class="message-text">
+                        <p>请帮我分析当前市场环境下的板块轮动趋势，并给出未来3-6个月的配置建议。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI回复1 -->
+            <div class="message">
+                <div class="message-avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-role">AI助手</div>
+                    <div class="message-text">
+                        <p>好的，我将从宏观环境、市场资金流向、各板块强弱三个维度为您进行分析。</p>
+
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">一、当前宏观环境分析</div>
+                            <p><strong>货币政策：</strong>央行维持稳健偏宽松态度，MLF利率保持2.50%不变，但降准预期升温。M2增速维持在9.5%左右，流动性整体充裕。</p>
+                            <p><strong>财政政策：</strong>2026年Q1专项债发行提速，基建投资预期加强。新能源、科技创新领域获得政策重点支持。</p>
+                            <p><strong>经济周期：</strong>经济处于弱复苏阶段，制造业PMI在50.2附近徘徊，消费数据温和回升，出口面临一定压力。</p>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">二、各板块当前强弱分析</div>
+                        </div>
+
+                        <table class="sector-table">
+                            <thead>
+                                <tr>
+                                    <th>板块</th>
+                                    <th>近1月涨跌幅</th>
+                                    <th>资金净流入</th>
+                                    <th>强弱趋势</th>
+                                    <th>评级</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>科技（AI/半导体）</strong></td>
+                                    <td class="trend-up">+8.5%</td>
+                                    <td class="trend-up">+125亿</td>
+                                    <td class="trend-up">强势上攻</td>
+                                    <td class="trend-up">看多</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>新能源（光伏/储能）</strong></td>
+                                    <td class="trend-up">+6.2%</td>
+                                    <td class="trend-up">+88亿</td>
+                                    <td class="trend-up">强势</td>
+                                    <td class="trend-up">看多</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>医药生物</strong></td>
+                                    <td class="trend-up">+3.8%</td>
+                                    <td class="trend-up">+45亿</td>
+                                    <td class="trend-neutral">震荡向上</td>
+                                    <td class="trend-neutral">中性偏多</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>消费（白酒/食品）</strong></td>
+                                    <td class="trend-up">+2.1%</td>
+                                    <td class="trend-neutral">+12亿</td>
+                                    <td class="trend-neutral">震荡</td>
+                                    <td class="trend-neutral">中性</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>金融（银行/保险）</strong></td>
+                                    <td class="trend-down">-1.5%</td>
+                                    <td class="trend-down">-28亿</td>
+                                    <td class="trend-down">偏弱</td>
+                                    <td class="trend-neutral">中性偏空</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>地产</strong></td>
+                                    <td class="trend-down">-4.2%</td>
+                                    <td class="trend-down">-56亿</td>
+                                    <td class="trend-down">弱势</td>
+                                    <td class="trend-down">看空</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style="margin-top: 20px;"><strong>板块热度分布图：</strong></p>
+                        <div class="sector-heat-map">
+                            <div class="sector-card sector-hot">
+                                <div class="sector-card-name">科技板块</div>
+                                <div class="sector-card-value">92</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                            <div class="sector-card sector-hot">
+                                <div class="sector-card-name">新能源</div>
+                                <div class="sector-card-value">87</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                            <div class="sector-card sector-warm">
+                                <div class="sector-card-name">医药生物</div>
+                                <div class="sector-card-value">68</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                            <div class="sector-card sector-cool">
+                                <div class="sector-card-name">消费</div>
+                                <div class="sector-card-value">55</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                            <div class="sector-card sector-cold">
+                                <div class="sector-card-name">金融</div>
+                                <div class="sector-card-value">42</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                            <div class="sector-card sector-cold">
+                                <div class="sector-card-name">地产</div>
+                                <div class="sector-card-value">28</div>
+                                <div class="sector-card-label">热度指数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI回复2 -->
+            <div class="message">
+                <div class="message-avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-role">AI助手</div>
+                    <div class="message-text">
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">三、未来3-6个月板块轮动预测</div>
+                            <p><strong>第一阶段（当前-2个月）：</strong>科技与新能源持续领涨</p>
+                            <p>在AI应用加速落地、半导体国产化推进以及新能源政策利好的背景下，科技和新能源板块将继续保持强势。资金将集中流入高景气赛道。</p>
+
+                            <p style="margin-top: 12px;"><strong>第二阶段（2-4个月）：</strong>医药与消费开始补涨</p>
+                            <p>随着前期强势板块估值压力增大，市场风格可能向防御性板块切换。医药创新药获批加速、消费复苏预期升温将带动板块表现。</p>
+
+                            <p style="margin-top: 12px;"><strong>第三阶段（4-6个月）：</strong>周期与金融迎来配置窗口</p>
+                            <p>如果基建投资落地、经济数据持续改善，周期板块（建材、化工）和金融板块可能迎来估值修复机会。</p>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">四、具体配置建议</div>
+                        </div>
+
+                        <div class="recommendation-list">
+                            <div class="recommendation-item">
+                                <strong>核心配置（40%）：</strong>科技板块（AI产业链、半导体设备、算力基础设施）<br>
+                                <span style="color: #666; font-size: 13px;">推荐标的：寒武纪、海光信息、中芯国际、澜起科技</span>
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>成长配置（25%）：</strong>新能源板块（光伏组件、储能系统、新能源车）<br>
+                                <span style="color: #666; font-size: 13px;">推荐标的：隆基绿能、宁德时代、阳光电源</span>
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>防御配置（20%）：</strong>医药生物（创新药、医疗器械、CXO）<br>
+                                <span style="color: #666; font-size: 13px;">推荐标的：恒瑞医药、药明康德、迈瑞医疗</span>
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>价值配置（10%）：</strong>消费板块（白酒、免税、美妆）<br>
+                                <span style="color: #666; font-size: 13px;">推荐标的：贵州茅台、中国中免、珀莱雅</span>
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>现金储备（5%）：</strong>保持一定流动性，应对市场波动<br>
+                                <span style="color: #666; font-size: 13px;">可配置货币基金或短期理财产品</span>
+                            </div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">五、风险提示</div>
+                            <p>⚠️ <strong>政策风险：</strong>需关注货币政策转向、行业监管政策变化</p>
+                            <p>⚠️ <strong>估值风险：</strong>科技板块估值已处高位，需警惕回调风险</p>
+                            <p>⚠️ <strong>外部风险：</strong>地缘政治、全球经济衰退预期可能冲击市场</p>
+                            <p>⚠️ <strong>轮动风险：</strong>板块轮动节奏可能快于预期，需灵活调整</p>
+                        </div>
+
+                        <p style="margin-top: 20px; color: #666; font-style: italic;">
+                            以上分析基于当前市场数据和宏观环境，建议您结合自身风险承受能力和投资目标进行调整。我会持续跟踪市场动态，为您提供实时更新。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户消息2 -->
+            <div class="message">
+                <div class="message-avatar user-avatar">我</div>
+                <div class="message-content">
+                    <div class="message-role">用户</div>
+                    <div class="message-text">
+                        <p>如果未来2个月美联储意外加息，这个配置方案需要如何调整？</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI回复3 -->
+            <div class="message">
+                <div class="message-avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-role">AI助手</div>
+                    <div class="message-text">
+                        <p>这是一个很好的风险情景假设。如果美联储意外加息，将显著改变全球流动性环境，我建议做以下调整：</p>
+
+                        <div class="highlight-box">
+                            <div class="highlight-box-title">应对策略：防御性调整</div>
+                        </div>
+
+                        <div class="recommendation-list">
+                            <div class="recommendation-item">
+                                <strong>降低高估值成长股配置（40% → 25%）：</strong><br>
+                                大幅减少科技板块仓位，重点保留盈利确定性强的AI应用龙头，规避估值过高的题材股
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>增加防御性板块（20% → 35%）：</strong><br>
+                                提升医药、必选消费（粮食、公用事业）配置，这些板块受利率影响较小且具备抗跌属性
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>增配黄金与资源（0% → 15%）：</strong><br>
+                                在加息周期末期，黄金往往受益于避险需求；同时可关注有色金属、能源板块的配置价值
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>提高现金比例（5% → 20%）：</strong><br>
+                                保持较高流动性，等待市场调整后的更好买点
+                            </div>
+
+                            <div class="recommendation-item">
+                                <strong>保留新能源底仓（5%）：</strong><br>
+                                新能源长期逻辑未变，可保留少量核心资产作为长期配置
+                            </div>
+                        </div>
+
+                        <p style="margin-top: 15px;"><strong>调整后的配置结构：</strong></p>
+                        <table class="sector-table" style="margin-top: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>板块</th>
+                                    <th>原配置</th>
+                                    <th>调整后</th>
+                                    <th>变化</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>科技</td>
+                                    <td>40%</td>
+                                    <td class="trend-down">25%</td>
+                                    <td class="trend-down">-15%</td>
+                                </tr>
+                                <tr>
+                                    <td>新能源</td>
+                                    <td>25%</td>
+                                    <td class="trend-down">5%</td>
+                                    <td class="trend-down">-20%</td>
+                                </tr>
+                                <tr>
+                                    <td>医药消费</td>
+                                    <td>30%</td>
+                                    <td class="trend-up">35%</td>
+                                    <td class="trend-up">+5%</td>
+                                </tr>
+                                <tr>
+                                    <td>黄金资源</td>
+                                    <td>0%</td>
+                                    <td class="trend-up">15%</td>
+                                    <td class="trend-up">+15%</td>
+                                </tr>
+                                <tr>
+                                    <td>现金</td>
+                                    <td>5%</td>
+                                    <td class="trend-up">20%</td>
+                                    <td class="trend-up">+15%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style="margin-top: 20px; padding: 12px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+                            <strong>核心逻辑：</strong>在流动性收紧预期下，市场将从"成长驱动"切换至"价值防御"。高估值板块面临较大调整压力，而低估值、高股息的防御性资产将更受青睐。保持足够的现金储备，可以在市场恐慌时捡便宜筹码。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="继续提问，例如：如果A股纳入MSCI权重提升，应该如何调整配置？">
+                <button class="send-button">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互功能
+        document.querySelector('.send-button').addEventListener('click', function() {
+            const input = document.querySelector('.chat-input');
+            if (input.value.trim()) {
+                alert('这是一个演示界面。在实际应用中，您的问题会发送给AI进行分析。\n\n您的问题：' + input.value);
+                input.value = '';
+            }
+        });
+
+        document.querySelector('.chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('.send-button').click();
+            }
+        });
+
+        // 侧边栏对话项点击
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 自动滚动到底部
+        const chatMessages = document.querySelector('.chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    </script>
+</body>
+</html>
