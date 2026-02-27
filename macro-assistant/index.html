@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宏观助手 - 宏观对持仓影响</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+                         'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-item.active {
+            background-color: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .chat-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(4px);
+        }
+
+        .chat-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .chat-item-preview {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 主聊天区域 */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+
+        .chat-header {
+            padding: 24px 36px;
+            border-bottom: 1px solid #e5e5e5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .chat-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 36px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        /* 消息气泡 */
+        .message {
+            margin-bottom: 28px;
+            display: flex;
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            line-height: 1.7;
+            font-size: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background-color: #ffffff;
+            color: #1d1d1f;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        /* 持仓卡片 */
+        .holdings-section {
+            margin-top: 16px;
+        }
+
+        .holdings-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 14px;
+            padding-left: 4px;
+        }
+
+        .holding-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+            border: 1px solid #e5e5e5;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .holding-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .holding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .holding-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .holding-code {
+            font-size: 12px;
+            color: #86868b;
+            font-family: 'Courier New', monospace;
+        }
+
+        .holding-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background-color: #667eea;
+            color: white;
+            font-size: 11px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .holding-impact {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #3a3a3c;
+            margin-top: 8px;
+        }
+
+        .impact-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .macro-factor {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .impact-positive {
+            color: #34c759;
+            font-weight: 600;
+        }
+
+        .impact-negative {
+            color: #ff3b30;
+            font-weight: 600;
+        }
+
+        .impact-neutral {
+            color: #ff9500;
+            font-weight: 600;
+        }
+
+        /* 宏观新闻摘要 */
+        .macro-news-section {
+            margin-top: 16px;
+            padding: 18px;
+            background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%);
+            border-left: 4px solid #0288d1;
+            border-radius: 10px;
+        }
+
+        .macro-news-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0277bd;
+            margin-bottom: 12px;
+        }
+
+        .news-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(2, 136, 209, 0.2);
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-date {
+            font-size: 12px;
+            color: #0288d1;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .news-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .news-link {
+            color: #0288d1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 4px;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+
+        .news-link:hover {
+            color: #01579b;
+            text-decoration: underline;
+        }
+
+        /* 输入区域 */
+        .chat-input-area {
+            padding: 24px 36px;
+            background-color: #ffffff;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .chat-input-container {
+            display: flex;
+            align-items: center;
+            background-color: #f5f5f5;
+            border-radius: 26px;
+            padding: 10px 18px;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input-container:focus-within {
+            border-color: #667eea;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px;
+            font-size: 15px;
+            outline: none;
+            color: #1d1d1f;
+        }
+
+        .chat-input::placeholder {
+            color: #98989d;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aeaeb2;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 220px;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">宏观对持仓影响</div>
+            <div class="sidebar-subtitle">
+                跟踪全球宏观数据，分析对当前持仓的影响
+            </div>
+            <div class="chat-list">
+                <div class="chat-item active">
+                    <div class="chat-item-title">当前持仓影响分析</div>
+                    <div class="chat-item-preview">分析宏观因素对3个持仓的影响...</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-item-title">美联储政策影响</div>
+                    <div class="chat-item-preview">利率变化对固收产品的影响...</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-item-title">国内货币政策</div>
+                    <div class="chat-item-preview">M2增速变化影响分析...</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-item-title">汇率波动影响</div>
+                    <div class="chat-item-preview">人民币汇率对出口型企业...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主聊天区域 -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="chat-title">宏观对持仓影响</div>
+                <div class="chat-subtitle">实时分析宏观环境对投资组合的影响</div>
+            </div>
+
+            <div class="chat-messages">
+                <!-- 用户消息 -->
+                <div class="message user">
+                    <div class="message-content">
+                        当前宏观因素对我持仓的影响
+                    </div>
+                    <div class="message-avatar">我</div>
+                </div>
+
+                <!-- 机器人回复 -->
+                <div class="message bot">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        好的，让我为您分析当前宏观环境对您持仓的影响。根据最新的宏观数据和政策动向，我识别出以下关键因素对您的持仓产生重要影响：
+
+                        <!-- 宏观新闻摘要 -->
+                        <div class="macro-news-section">
+                            <div class="macro-news-title">📊 近期关键宏观事件</div>
+
+                            <div class="news-item">
+                                <div class="news-date">2024年2月20日</div>
+                                <div class="news-content">
+                                    <strong>中国1月M2同比增长8.7%</strong>，社融规模增量6.5万亿元。货币供应量保持平稳增长，流动性环境相对宽松。
+                                    <br>
+                                    <a href="#" class="news-link">查看详情 →</a>
+                                </div>
+                            </div>
+
+                            <div class="news-item">
+                                <div class="news-date">2024年2月18日</div>
+                                <div class="news-content">
+                                    <strong>美联储会议纪要</strong>显示维持高利率时间可能延长，市场预期降息时间推迟至下半年。
+                                    <br>
+                                    <a href="#" class="news-link">查看详情 →</a>
+                                </div>
+                            </div>
+
+                            <div class="news-item">
+                                <div class="news-date">2024年2月15日</div>
+                                <div class="news-content">
+                                    <strong>人民币汇率</strong>在7.20附近波动，出口数据显示1月同比增长10.3%，超出市场预期。
+                                    <br>
+                                    <a href="#" class="news-link">查看详情 →</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 持仓影响分析 -->
+                        <div class="holdings-section">
+                            <div class="holdings-title">您的持仓影响分析：</div>
+
+                            <!-- 持仓1：中金黄金 -->
+                            <div class="holding-card">
+                                <div class="holding-header">
+                                    <div>
+                                        <div class="holding-name">中金黄金</div>
+                                        <div class="holding-code">600489.SH</div>
+                                    </div>
+                                    <div class="holding-tag">A股</div>
+                                </div>
+                                <div class="holding-impact">
+                                    <span class="impact-label">宏观影响因素：</span>
+                                    <span class="macro-factor">美联储政策</span>
+                                    <span class="macro-factor">实际利率</span>
+                                    <span class="macro-factor">地缘风险</span>
+                                    <br><br>
+                                    <span class="impact-positive">✓ 正面影响：</span>美联储维持高利率预期强化，实际利率上行压力减缓，对黄金价格形成支撑。当前地缘政治不确定性上升，避险需求增强，利好黄金板块。
+                                    <br><br>
+                                    <span class="impact-neutral">⚠ 关注点：</span>需关注美元指数走势，若美元持续走强可能对黄金价格形成短期压制。
+                                </div>
+                            </div>
+
+                            <!-- 持仓2：澜起科技 -->
+                            <div class="holding-card">
+                                <div class="holding-header">
+                                    <div>
+                                        <div class="holding-name">澜起科技</div>
+                                        <div class="holding-code">688008.SH</div>
+                                    </div>
+                                    <div class="holding-tag">A股 · 半导体</div>
+                                </div>
+                                <div class="holding-impact">
+                                    <span class="impact-label">宏观影响因素：</span>
+                                    <span class="macro-factor">国内货币政策</span>
+                                    <span class="macro-factor">出口数据</span>
+                                    <span class="macro-factor">产业政策</span>
+                                    <br><br>
+                                    <span class="impact-positive">✓ 正面影响：</span>M2增速8.7%保持稳健，流动性环境对科技成长股友好。1月出口超预期，反映海外需求回暖，利好半导体行业订单。国产替代政策持续加码，澜起在DDR5内存接口芯片领域技术领先。
+                                    <br><br>
+                                    <span class="impact-negative">✗ 风险点：</span>美国对华半导体限制政策可能升级，需关注技术出口管制动向。
+                                </div>
+                            </div>
+
+                            <!-- 持仓3：国债ETF -->
+                            <div class="holding-card">
+                                <div class="holding-header">
+                                    <div>
+                                        <div class="holding-name">10年期国债ETF</div>
+                                        <div class="holding-code">511260.SH</div>
+                                    </div>
+                                    <div class="holding-tag">固收</div>
+                                </div>
+                                <div class="holding-impact">
+                                    <span class="impact-label">宏观影响因素：</span>
+                                    <span class="macro-factor">货币政策</span>
+                                    <span class="macro-factor">财政政策</span>
+                                    <span class="macro-factor">资金面</span>
+                                    <br><br>
+                                    <span class="impact-positive">✓ 正面影响：</span>央行维持宽松货币政策取向，M2和社融数据显示流动性充裕，长端利率下行空间仍存。当前10年期国债收益率在2.5%附近，配置价值凸显。
+                                    <br><br>
+                                    <span class="impact-neutral">⚠ 关注点：</span>需关注地方债发行节奏，若供给压力加大可能对长端利率形成扰动。财政政策如加大支出力度，可能推升通胀预期，对债市形成压力。
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 16px; background-color: rgba(102, 126, 234, 0.1); border-radius: 10px; font-size: 14px; line-height: 1.7;">
+                            <strong style="color: #667eea;">📈 综合建议：</strong><br>
+                            当前宏观环境对您的投资组合整体呈现<strong>中性偏积极</strong>的态势。黄金板块受益于避险情绪和货币政策，半导体受益于国产替代和出口回暖，固收资产受益于宽松流动性。建议保持当前配置，密切关注美联储政策转向信号和国内经济数据变化。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" placeholder="继续提问，例如：分析美联储降息对持仓的影响...">
+                    <button class="send-button">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 聊天输入处理
+        const chatInput = document.querySelector('.chat-input');
+        const sendButton = document.querySelector('.send-button');
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                console.log('发送消息:', message);
+                chatInput.value = '';
+                // 实际应用中会调用API并显示新消息
+                alert('消息已发送：' + message + '\n\n实际应用中，这里会调用后端API进行宏观分析。');
+            }
+        }
+
+        // 平滑滚动到底部
+        const chatMessages = document.querySelector('.chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // 侧边栏聊天切换
+        const chatItems = document.querySelectorAll('.chat-item');
+        chatItems.forEach(item => {
+            item.addEventListener('click', function() {
+                chatItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                const title = this.querySelector('.chat-item-title').textContent;
+                document.querySelector('.chat-title').textContent = title;
+
+                console.log('切换到聊天:', title);
+            });
+        });
+
+        // 持仓卡片点击交互
+        const holdingCards = document.querySelectorAll('.holding-card');
+        holdingCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const name = this.querySelector('.holding-name').textContent;
+                console.log('查看持仓详情:', name);
+                // 这里可以添加更详细的分析弹窗
+            });
+        });
+
+        // 新闻链接点击
+        const newsLinks = document.querySelectorAll('.news-link');
+        newsLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const newsContent = this.closest('.news-item').querySelector('.news-content strong').textContent;
+                alert('查看新闻详情：\n\n' + newsContent + '\n\n实际应用中，这里会跳转到新闻详情页面或显示完整内容。');
+            });
+        });
+    </script>
+</body>
+</html>
