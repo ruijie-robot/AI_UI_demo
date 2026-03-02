@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI辅助预测板块轮动</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-item:hover {
+            background: #2d2d2d;
+        }
+
+        .chat-item.active {
+            background: #3d3d3d;
+        }
+
+        .chat-item-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-desc {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .new-chat-btn {
+            margin: 15px;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn:hover {
+            background: #2563eb;
+        }
+
+        /* 主聊天区域 */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fff;
+        }
+
+        .chat-header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .chat-header .subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* 消息区域 */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            margin-left: auto;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #10a37f;
+            color: white;
+        }
+
+        .message-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-left: auto;
+        }
+
+        .message-content {
+            padding: 14px 18px;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.ai .message-content {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: #10a37f;
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        /* 板块卡片样式 */
+        .sector-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid;
+        }
+
+        .sector-card.positive {
+            border-left-color: #10b981;
+        }
+
+        .sector-card.negative {
+            border-left-color: #ef4444;
+        }
+
+        .sector-card.neutral {
+            border-left-color: #f59e0b;
+        }
+
+        .sector-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sector-trend {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .sector-trend.up {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .sector-trend.down {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .sector-reason {
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* 表格样式 */
+        .prediction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .prediction-table th,
+        .prediction-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .prediction-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .prediction-table td {
+            font-size: 13px;
+        }
+
+        .prediction-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .confidence-bar {
+            width: 100px;
+            height: 8px;
+            background: #e5e5e5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .confidence-fill.high {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .confidence-fill.medium {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .confidence-fill.low {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 20px 24px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 8px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: #10a37f;
+            background: white;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            max-height: 120px;
+            min-height: 40px;
+            padding: 8px 0;
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #0d8a6c;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 重点标记 */
+        .highlight {
+            background: linear-gradient(120deg, #fef3c7 0%, #fef3c7 100%);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .risk-warning {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .risk-warning-title {
+            font-weight: 600;
+            color: #b91c1c;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .risk-warning-text {
+            font-size: 12px;
+            color: #7f1d1d;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>AI 投研助手</h2>
+        </div>
+        <button class="new-chat-btn">
+            <span>+</span> 新建对话
+        </button>
+        <div class="chat-list">
+            <div class="chat-item active">
+                <div class="chat-item-title">AI辅助预测板块轮动</div>
+                <div class="chat-item-desc">分析当前市场板块轮动趋势</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">黄金板块持仓分析</div>
+                <div class="chat-item-desc">黄金板块历史回撤分析</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">宏观环境影响评估</div>
+                <div class="chat-item-desc">当前宏观因素对持仓的影响</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">股票对比分析</div>
+                <div class="chat-item-desc">迈瑞医疗 vs 联影医疗</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <h1>AI辅助预测板块轮动</h1>
+            <div class="subtitle">基于多因子模型分析市场板块轮动趋势</div>
+        </div>
+
+        <div class="messages-container">
+            <!-- 用户消息 -->
+            <div class="message user">
+                <div class="message-header">
+                    <div class="message-avatar">我</div>
+                    <div class="message-name">我</div>
+                    <div class="message-time">09:30</div>
+                </div>
+                <div class="message-content">
+                    请帮我分析当前市场的板块轮动情况，哪些板块有望在未来1-2个月表现较好？
+                </div>
+            </div>
+
+            <!-- AI消息 -->
+            <div class="message ai">
+                <div class="message-header">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-name">AI投研助手</div>
+                    <div class="message-time">09:30</div>
+                </div>
+                <div class="message-content">
+                    <p>好的，我来为您分析当前市场的板块轮动情况。基于我监控的宏观因子、资金流向、技术面和基本面数据，以下是分析结果：</p>
+
+                    <div class="sector-card positive">
+                        <div class="sector-name">
+                            <span>🟢 科技成长板块（半导体、消费电子）</span>
+                            <span class="sector-trend up">看好 ↑</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>驱动因素：</strong>
+                            <ul style="margin-left: 20px; margin-top: 8px;">
+                                <li>全球半导体周期见底回升，库存去化接近尾声</li>
+                                <li>AIGC推动的硬件需求逐步兑现</li>
+                                <li>国内"科技自立"政策持续加码</li>
+                                <li>北向资金连续5周净流入相关标的</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="sector-card positive">
+                        <div class="sector-name">
+                            <span>🟢 高股息板块（银行、电力、石油石化）</span>
+                            <span class="sector-trend up">看好 ↑</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>驱动因素：</strong>
+                            <ul style="margin-left: 20px; margin-top: 8px;">
+                                <li>无风险利率下行周期，股息率吸引力凸显</li>
+                                <li>险资等长线资金加速配置高股息资产</li>
+                                <li>监管层鼓励分红，央企国企分红率提升</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="sector-card neutral">
+                        <div class="sector-name">
+                            <span>🟡 消费板块（白酒、家电、汽车）</span>
+                            <span class="sector-trend down">观望 →</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>当前状态：</strong>
+                            消费数据温和复苏但力度有限，春节后进入消费淡季，等待二季度数据验证。建议<span class="highlight">低吸不追高</span>。
+                        </div>
+                    </div>
+
+                    <div class="sector-card negative">
+                        <div class="sector-name">
+                            <span>🔴 地产链板块（房地产、建材）</span>
+                            <span class="sector-trend down">谨慎 ↓</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>风险提示：</strong>
+                            虽然政策持续放松，但行业基本面仍处于磨底阶段，销售端恢复缓慢，建议规避。
+                        </div>
+                    </div>
+
+                    <table class="prediction-table">
+                        <thead>
+                            <tr>
+                                <th>板块</th>
+                                <th>展望（1-2个月）</th>
+                                <th>置信度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>半导体/电子</td>
+                                <td style="color: #047857;">超配</td>
+                                <td>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill high" style="width: 85%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>银行</td>
+                                <td style="color: #047857;">超配</td>
+                                <td>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill high" style="width: 80%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>电力</td>
+                                <td style="color: #047857;">标配偏多</td>
+                                <td>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill medium" style="width: 70%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>白酒/家电</td>
+                                <td style="color: #b45309;">标配</td>
+                                <td>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill medium" style="width: 60%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>房地产</td>
+                                <td style="color: #b91c1c;">低配</td>
+                                <td>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill medium" style="width: 65%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="risk-warning">
+                        <div class="risk-warning-title">⚠️ 风险提示</div>
+                        <div class="risk-warning-text">
+                            以上分析基于历史数据和当前市场环境，板块轮动受多重因素影响，可能存在不确定性。建议结合自身风险承受能力进行投资决策，并密切关注后续宏观数据变化。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户消息 -->
+            <div class="message user">
+                <div class="message-header">
+                    <div class="message-avatar">我</div>
+                    <div class="message-name">我</div>
+                    <div class="message-time">09:35</div>
+                </div>
+                <div class="message-content">
+                    科技成长板块具体可以关注哪些细分赛道？
+                </div>
+            </div>
+
+            <!-- AI消息 -->
+            <div class="message ai">
+                <div class="message-header">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-name">AI投研助手</div>
+                    <div class="message-time">09:35</div>
+                </div>
+                <div class="message-content">
+                    <p>科技成长板块中，我建议您重点关注以下细分赛道：</p>
+
+                    <div class="sector-card positive">
+                        <div class="sector-name">
+                            <span>🚀 AI算力产业链</span>
+                            <span class="sector-trend up">优先级：高</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>核心逻辑：</strong>全球大模型军备竞赛持续，AI算力需求爆发式增长
+                            <br><br>
+                            <strong>关注方向：</strong>
+                            <ul style="margin-left: 20px;">
+                                <li>AI芯片及配套模组</li>
+                                <li>光模块（800G/1.6T需求旺盛）</li>
+                                <li>服务器及液冷设备</li>
+                                <li>先进封装（CoWoS、HBM相关）</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="sector-card positive">
+                        <div class="sector-name">
+                            <span>📱 消费电子复苏链</span>
+                            <span class="sector-trend up">优先级：中高</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>核心逻辑：</strong>智能手机换机周期叠加AI手机概念催化
+                            <br><br>
+                            <strong>关注方向：</strong>
+                            <ul style="margin-left: 20px;">
+                                <li>折叠屏供应链</li>
+                                <li>潜望式摄像头模组</li>
+                                <li>钛合金中框材料</li>
+                                <li>消费电子龙头标的（估值修复空间大）</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="sector-card positive">
+                        <div class="sector-name">
+                            <span>🔬 国产半导体设备/材料</span>
+                            <span class="sector-trend up">优先级：中</span>
+                        </div>
+                        <div class="sector-reason">
+                            <strong>核心逻辑：</strong>国产替代加速，政策持续支持
+                            <br><br>
+                            <strong>关注方向：</strong>
+                            <ul style="margin-left: 20px;">
+                                <li>刻蚀、薄膜沉积等核心设备</li>
+                                <li>光刻胶、特种气体等关键材料</li>
+                                <li>设备零部件国产化</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p><strong>配置建议：</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>AI算力：建议40-50%仓位（确定性最高）</li>
+                        <li>消费电子：建议30-40%仓位（弹性较大）</li>
+                        <li>半导体设备材料：建议10-20%仓位（政策驱动）</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <textarea placeholder="输入您的问题..." rows="1"></textarea>
+                <button class="send-btn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.querySelector('textarea');
+        const sendBtn = document.querySelector('.send-btn');
+
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            sendBtn.disabled = this.value.trim() === '';
+        });
+
+        sendBtn.addEventListener('click', function() {
+            if (textarea.value.trim()) {
+                // 模拟发送消息
+                alert('演示模式：消息已发送');
+            }
+        });
+    </script>
+</body>
+</html>
