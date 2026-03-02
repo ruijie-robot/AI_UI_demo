@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI投研助手 - 股票比较分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-item:hover {
+            background: #2d2d2d;
+        }
+
+        .chat-item.active {
+            background: #3d3d3d;
+        }
+
+        .chat-item-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-desc {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .new-chat-btn {
+            margin: 15px;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn:hover {
+            background: #2563eb;
+        }
+
+        /* 主聊天区域 */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fff;
+        }
+
+        .chat-header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .chat-header .subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* 消息区域 */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            margin-left: auto;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #10a37f;
+            color: white;
+        }
+
+        .message.business .message-avatar {
+            background: linear-gradient(135deg, #1890ff, #096dd9);
+            color: white;
+        }
+
+        .message.moderator .message-avatar {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+        }
+
+        .message.finance .message-avatar {
+            background: linear-gradient(135deg, #722ed1, #531dab);
+            color: white;
+        }
+
+        .message.market .message-avatar {
+            background: linear-gradient(135deg, #52c41a, #389e0d);
+            color: white;
+        }
+
+        .message-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-left: auto;
+        }
+
+        .message-content {
+            padding: 14px 18px;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.ai .message-content,
+        .message.business .message-content,
+        .message.moderator .message-content,
+        .message.finance .message-content,
+        .message.market .message-content {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: #10a37f;
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .highlight {
+            background: rgba(251, 191, 36, 0.25);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .message.user .highlight {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* 总结卡片 */
+        .summary-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #f59e0b;
+            margin-top: 16px;
+        }
+
+        .summary-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .summary-title::before {
+            content: "💡";
+            margin-right: 8px;
+        }
+
+        .summary-content {
+            font-size: 14px;
+            color: #78350f;
+            line-height: 1.8;
+        }
+
+        .summary-section {
+            margin-bottom: 8px;
+        }
+
+        .summary-section:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 20px 24px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 8px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: #10a37f;
+            background: white;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            max-height: 120px;
+            min-height: 40px;
+            padding: 8px 0;
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #0d8a6c;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aeaeb2;
+        }
+
+        .debate-title {
+            text-align: center;
+            padding: 30px 0;
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>AI 投研助手</h2>
+        </div>
+        <button class="new-chat-btn">
+            <span>+</span> 新建对话
+        </button>
+        <div class="chat-list">
+            <div class="chat-item active">
+                <div class="chat-item-title">迈瑞医疗 与 联影医疗</div>
+                <div class="chat-item-desc">AI专家团队深度对比分析</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">宁德时代 vs 比亚迪</div>
+                <div class="chat-item-desc">新能源汽车产业链对比</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">贵州茅台 vs 五粮液</div>
+                <div class="chat-item-desc">白酒行业龙头比较</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">中芯国际 vs 华虹半导体</div>
+                <div class="chat-item-desc">半导体代工厂对比分析</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <h1>多角色AI辩论分析</h1>
+            <div class="subtitle">迈瑞医疗 与 联影医疗 - 深度对比</div>
+        </div>
+
+        <div class="messages-container">
+            <div class="debate-title">迈瑞医疗 与 联影医疗</div>
+
+            <!-- 业务专家 -->
+            <div class="message business">
+                <div class="message-header">
+                    <div class="message-avatar">📊</div>
+                    <div class="message-name">业务专家</div>
+                    <div class="message-time">10:15</div>
+                </div>
+                <div class="message-content">
+                    我认为在成长型赛道，<strong>迈瑞的核心逻辑是'低成本扩张的规模效应'</strong>。它就像医疗器械界的华为，靠强大的销售网络和全品类覆盖，把每一个进入的细分领域（如超声、血球）都做成现金牛。而联影虽然在 PET-CT 等高端领域技术领先，但那种<span class="highlight">'高精尖'产品更像是单打独斗</span>，缺乏迈瑞那种'试剂+仪器'的封闭生态闭环。长期看，迈瑞的商业模式更有韧性。
+                </div>
+            </div>
+
+            <!-- 主持人 -->
+            <div class="message moderator">
+                <div class="message-header">
+                    <div class="message-avatar">🎯</div>
+                    <div class="message-name">主持人</div>
+                    <div class="message-time">10:17</div>
+                </div>
+                <div class="message-content">
+                    业务专家点出了核心：<strong>迈瑞卖的是'系统'，联影卖的是'产品'</strong>。 但是，业务逻辑再强，如果最后不能体现在报表的利润里，那只是空谈。<br><br>
+                    <strong>【财务专家】</strong>，业务专家提到了迈瑞的'现金牛'和联影的'高精尖'，请你从财务报表的角度，验证一下联影为了这种'高精尖'付出了多大的资金代价？它的增长是否伴随着资产质量的恶化？
+                </div>
+            </div>
+
+            <!-- 财务专家 -->
+            <div class="message finance">
+                <div class="message-header">
+                    <div class="message-avatar">💼</div>
+                    <div class="message-name">财务专家</div>
+                    <div class="message-time">10:20</div>
+                </div>
+                <div class="message-content">
+                    既然主持人问到代价，数据非常扎心。<strong>联影为了维持所谓的'技术领先'，其研发投入占营收比重长期超过 15%</strong>，且其中相当一部分进行了资本化处理。更令人担忧的是它的<span class="highlight">存货周转天数——联影接近 200 天，而迈瑞只有 80 多天</span>。这意味着联影的大量资金被积压在原材料和半成品中。<br><br>
+                    对比之下，<strong>迈瑞的毛利率不仅稳，而且经营性现金流净额常年高于净利润</strong>。简单说，迈瑞赚的是'真钱'，联影现在赚的是'账面上的预期'。如果高端产品销售稍有滞后，联影将面临巨大的减值压力。
+                </div>
+            </div>
+
+            <!-- 用户（我） -->
+            <div class="message user">
+                <div class="message-header">
+                    <div class="message-avatar">我</div>
+                    <div class="message-name">我</div>
+                    <div class="message-time">10:23</div>
+                </div>
+                <div class="message-content">
+                    迈瑞的财务是<strong>'防守反击'</strong>，联影的财务是<strong>'高杠杆豪赌'</strong>。 但是，财务往往是滞后的。在 A 股，有时候'有瑕疵的高增长'反而比'完美的稳健'更受资金青睐。<br><br>
+                    但为什么在市场情绪高涨时，资金反而更愿意追逐这类高风险、高弹性的标的？迈瑞这种'完美的白马'现在是否已经陷入了<span class="highlight">'审美疲劳'</span>？
+                </div>
+            </div>
+
+            <!-- 市场定价专家 -->
+            <div class="message market">
+                <div class="message-header">
+                    <div class="message-avatar">📈</div>
+                    <div class="message-name">市场定价专家</div>
+                    <div class="message-time">10:25</div>
+                </div>
+                <div class="message-content">
+                    这正是我想说的。财务专家看到的'风险'，在二级市场眼中往往是'弹性'。<strong>迈瑞的问题在于'预期太满'</strong>。它是公募基金的压舱石，筹码结构极其拥挤。当它的增速从 25% 滑落到 20% 时，市场会无情地杀估值（De-rating）。<br><br>
+                    而<span class="highlight">联影处于'国产替代'的叙事巅峰</span>。市场目前不看它的存货，看的是它在三甲医院每抢下一台 GE 的份额。只要'国产替代'这个主题没冷，联影的高估值就能维持。<br><br>
+                    现在的定价逻辑是：<strong>迈瑞是按 PEG=1.2 来定价的制造业，而联影是按'硬科技突破'来定价的期权</strong>。在当前的政策风向下，资金往往愿意给'期权'更高的溢价。
+                </div>
+            </div>
+
+            <!-- 主持人总结 -->
+            <div class="message moderator">
+                <div class="message-header">
+                    <div class="message-avatar">🎯</div>
+                    <div class="message-name">主持人</div>
+                    <div class="message-time">10:28</div>
+                </div>
+                <div class="message-content">
+                    通过这一轮交锋，我们的结论变得立体了：<br><br>
+                    <strong>确定性： 迈瑞 > 联影。</strong>如果你代表的是追求稳健的社保或养老金，迈瑞是唯一选择。<br><br>
+                    <strong>攻击性： 联影 > 迈瑞。</strong>如果你正处于排名考核压力下，需要捕捉国产替代爆发的 Beta 收益，联影是更锋利的矛。<br><br>
+                    <strong>核心预警点：</strong> 我们要盯死联影的存货减值和迈瑞的集采执行情况。<br><br>
+                    <strong>下一步行动：</strong>我会要求量化组做一个'压力测试'——如果未来半年无风险利率上行，对高 PE 的联影冲击会有多大？同时，调研组下周去访谈三家三甲医院的放射科主任，看看联影的实际口碑是否匹配它的'势能'。
+
+                    <div class="summary-card">
+                        <div class="summary-title">投资决策框架</div>
+                        <div class="summary-content">
+                            <div class="summary-section">
+                                <strong>✓ 稳健配置：</strong>迈瑞医疗 - 适合社保、养老金等长期资金，追求确定性收益
+                            </div>
+                            <div class="summary-section">
+                                <strong>✓ 进攻配置：</strong>联影医疗 - 适合私募、排名压力型基金，捕捉国产替代Beta
+                            </div>
+                            <div class="summary-section">
+                                <strong>✓ 风险监控：</strong>联影存货减值风险、迈瑞集采价格压力
+                            </div>
+                            <div class="summary-section">
+                                <strong>✓ 跟踪指标：</strong>联影三甲医院渗透率、迈瑞海外市场份额变化
+                            </div>
+                            <div class="summary-section">
+                                <strong>✓ 估值逻辑：</strong>迈瑞 PEG=1.2（制造业定价） vs 联影（期权式定价）
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <textarea placeholder="输入您的问题..." rows="1"></textarea>
+                <button class="send-btn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.querySelector('textarea');
+        const sendBtn = document.querySelector('.send-btn');
+
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            sendBtn.disabled = this.value.trim() === '';
+        });
+
+        sendBtn.addEventListener('click', function() {
+            if (textarea.value.trim()) {
+                alert('演示模式：消息已发送');
+            }
+        });
+    </script>
+</body>
+</html>

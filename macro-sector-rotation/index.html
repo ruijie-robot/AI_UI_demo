@@ -12,164 +12,198 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: #f5f5f5;
             height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
             display: flex;
-            height: 100vh;
         }
 
-        /* 左侧边栏 */
+        /* 侧边栏 */
         .sidebar {
             width: 280px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 20px;
+            background: #1e1e1e;
+            color: #e0e0e0;
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
         .sidebar-header {
-            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 1px solid #333;
         }
 
-        .chat-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            line-height: 1.4;
+        .sidebar-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
         }
 
-        .chat-subtitle {
-            font-size: 13px;
-            opacity: 0.85;
-            line-height: 1.5;
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
         }
 
-        .sidebar-stats {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
+        .chat-item {
+            padding: 12px 16px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .stat-item {
+        .chat-item:hover {
+            background: #2d2d2d;
+        }
+
+        .chat-item.active {
+            background: #3d3d3d;
+        }
+
+        .chat-item-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-desc {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .new-chat-btn {
+            margin: 15px;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 13px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .stat-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .stat-label {
-            opacity: 0.85;
-        }
-
-        .stat-value {
-            font-weight: 600;
+        .new-chat-btn:hover {
+            background: #2563eb;
         }
 
         /* 主聊天区域 */
-        .chat-main {
+        .main-chat {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #f5f5f5;
+            background: #fff;
         }
 
         .chat-header {
-            background: white;
-            padding: 20px 30px;
+            padding: 16px 24px;
             border-bottom: 1px solid #e5e5e5;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: #fff;
         }
 
         .chat-header h1 {
-            font-size: 24px;
+            font-size: 18px;
+            font-weight: 500;
             color: #1a1a1a;
-            font-weight: 600;
         }
 
-        .chat-messages {
+        .chat-header .subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* 消息区域 */
+        .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 30px;
+            padding: 24px;
+            background: #fafafa;
         }
 
         .message {
-            margin-bottom: 25px;
-            animation: fadeIn 0.3s ease-in;
+            max-width: 80%;
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .message-user {
-            display: flex;
-            justify-content: flex-end;
+        .message.user {
+            margin-left: auto;
         }
 
-        .message-ai {
+        .message-header {
             display: flex;
-            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #10a37f;
+            color: white;
+        }
+
+        .message-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-left: auto;
         }
 
         .message-content {
-            max-width: 75%;
-            padding: 16px 20px;
+            padding: 14px 18px;
             border-radius: 12px;
             line-height: 1.6;
-            font-size: 15px;
+            font-size: 14px;
         }
 
-        .message-user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message-ai .message-content {
+        .message.ai .message-content {
             background: white;
-            color: #333;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e5e5;
+            border-top-left-radius: 4px;
         }
 
-        .ai-label {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 8px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-        }
-
-        .ai-label::before {
-            content: "🤖";
-            margin-right: 6px;
+        .message.user .message-content {
+            background: #10a37f;
+            color: white;
+            border-top-right-radius: 4px;
         }
 
         /* 资产分析卡片 */
         .asset-analysis {
             margin-top: 15px;
-            border-top: 1px solid #f0f0f0;
-            padding-top: 15px;
         }
 
         .asset-card {
@@ -303,30 +337,81 @@
             color: #d97706;
         }
 
-        /* 滚动条样式 */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
+        /* 输入区域 */
+        .input-area {
+            padding: 20px 24px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
         }
 
-        .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .input-container {
+            display: flex;
+            gap: 12px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 8px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
         }
 
-        .chat-messages::-webkit-scrollbar-thumb {
+        .input-container:focus-within {
+            border-color: #10a37f;
+            background: white;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            max-height: 120px;
+            min-height: 40px;
+            padding: 8px 0;
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #0d8a6c;
+        }
+
+        .send-btn:disabled {
             background: #ccc;
-            border-radius: 3px;
+            cursor: not-allowed;
         }
 
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #999;
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        /* 时间戳 */
-        .timestamp {
-            font-size: 11px;
-            color: #999;
-            margin-top: 8px;
-            text-align: right;
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aeaeb2;
         }
 
         .divider {
@@ -346,7 +431,7 @@
         }
 
         .divider span {
-            background: #f5f5f5;
+            background: #fafafa;
             padding: 0 15px;
             color: #999;
             font-size: 12px;
@@ -356,373 +441,405 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- 左侧边栏 -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="chat-title">宏观资产轮动分析</div>
-                <div class="chat-subtitle">AI辅助投资决策系统</div>
-            </div>
-
-            <div class="sidebar-stats">
-                <div class="stat-item">
-                    <span class="stat-label">分析时间</span>
-                    <span class="stat-value">2024-03-15</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">资产类别</span>
-                    <span class="stat-value">8 类</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">市场环境</span>
-                    <span class="stat-value">震荡</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">信号强度</span>
-                    <span class="stat-value">中等</span>
-                </div>
-            </div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>AI 投研助手</h2>
         </div>
-
-        <!-- 主聊天区域 -->
-        <div class="chat-main">
-            <div class="chat-header">
-                <h1>宏观资产轮动分析</h1>
+        <button class="new-chat-btn">
+            <span>+</span> 新建对话
+        </button>
+        <div class="chat-list">
+            <div class="chat-item active">
+                <div class="chat-item-title">宏观资产轮动分析</div>
+                <div class="chat-item-desc">股票、固收、大宗商品配置建议</div>
             </div>
-
-            <div class="chat-messages">
-                <!-- 用户消息 -->
-                <div class="message message-user">
-                    <div class="message-content">
-                        请分析当前宏观环境下，股票、固收和大宗商品的配置建议，并判断各资产类别是否存在超买超卖现象
-                    </div>
-                </div>
-
-                <!-- AI 回复 -->
-                <div class="message message-ai">
-                    <div>
-                        <div class="ai-label">AI 宏观分析助手</div>
-                        <div class="message-content">
-                            <p>好的，我将为您分析当前宏观环境下各主要资产类别的配置价值。让我从以下几个维度进行综合评估：</p>
-
-                            <div class="asset-analysis">
-                                <strong style="display: block; margin-bottom: 12px; color: #1a1a1a;">📊 主要资产类别分析</strong>
-
-                                <!-- A股市场 -->
-                                <div class="asset-card neutral">
-                                    <div class="asset-header">
-                                        <span class="asset-name">A股市场（沪深300）</span>
-                                        <span class="asset-signal signal-neutral">中性</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        当前处于区间震荡，估值位于历史中位水平。政策底已现，但市场底尚需确认。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">PE分位</div>
-                                            <div class="metric-value">45%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">技术指标</div>
-                                            <div class="metric-value">RSI 52</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">资金流向</div>
-                                            <div class="metric-value">流出</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 成长股 -->
-                                <div class="asset-card bearish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">成长股（创业板指）</span>
-                                        <span class="asset-signal signal-overbought">超买</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        近期AI、半导体等科技板块涨幅较大，短期技术指标超买，存在回调风险。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">PE分位</div>
-                                            <div class="metric-value">78%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">技术指标</div>
-                                            <div class="metric-value">RSI 71</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">资金流向</div>
-                                            <div class="metric-value">流入放缓</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 价值股 -->
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">价值股（上证50）</span>
-                                        <span class="asset-signal signal-oversold">超卖</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        银行、地产等传统板块估值处于历史低位，股息率具有吸引力，配置价值凸显。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">PE分位</div>
-                                            <div class="metric-value">18%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">技术指标</div>
-                                            <div class="metric-value">RSI 35</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">股息率</div>
-                                            <div class="metric-value">4.2%</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 利率债 -->
-                                <div class="asset-card neutral">
-                                    <div class="asset-header">
-                                        <span class="asset-name">利率债（10年国债）</span>
-                                        <span class="asset-signal signal-neutral">中性</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        收益率在2.3%-2.5%区间震荡，流动性合理充裕，但央行防止套利交易过热。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">当前收益率</div>
-                                            <div class="metric-value">2.38%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">历史分位</div>
-                                            <div class="metric-value">25%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">久期风险</div>
-                                            <div class="metric-value">低</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 信用债 -->
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">信用债（AA+企业债）</span>
-                                        <span class="asset-signal signal-oversold">超卖</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        信用利差有所走阔，但优质企业偿债能力稳健，票息价值突出。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">信用利差</div>
-                                            <div class="metric-value">120BP</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">历史分位</div>
-                                            <div class="metric-value">68%</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">票息</div>
-                                            <div class="metric-value">3.5%</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 黄金 -->
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">黄金（AU9999）</span>
-                                        <span class="asset-signal signal-oversold">超卖</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        美元走弱预期增强，地缘政治风险持续，黄金作为避险资产配置价值提升。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">当前价格</div>
-                                            <div class="metric-value">¥485/克</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">技术指标</div>
-                                            <div class="metric-value">RSI 38</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">央行增持</div>
-                                            <div class="metric-value">持续</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 原油 -->
-                                <div class="asset-card neutral">
-                                    <div class="asset-header">
-                                        <span class="asset-name">原油（布伦特）</span>
-                                        <span class="asset-signal signal-neutral">中性</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        供需双弱格局，OPEC+减产与需求疲软形成对冲，价格维持区间震荡。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">当前价格</div>
-                                            <div class="metric-value">$82/桶</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">库存水平</div>
-                                            <div class="metric-value">中位</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">需求前景</div>
-                                            <div class="metric-value">谨慎</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 铜 -->
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">工业金属（铜）</span>
-                                        <span class="asset-signal signal-oversold">超卖</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        新能源需求增长+供应偏紧，中长期看好。短期受地产拖累，但已进入配置窗口。
-                                    </div>
-                                    <div class="metric-row">
-                                        <div class="metric">
-                                            <div class="metric-label">LME价格</div>
-                                            <div class="metric-value">$8,450/吨</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">库存</div>
-                                            <div class="metric-value">低位</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-label">TC/RC</div>
-                                            <div class="metric-value">偏低</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="timestamp">分析时间: 2024-03-15 14:32</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="divider"><span>分析总结</span></div>
-
-                <!-- AI 建议 -->
-                <div class="message message-ai">
-                    <div>
-                        <div class="ai-label">AI 宏观分析助手</div>
-                        <div class="message-content">
-                            <div class="recommendation">
-                                <div class="recommendation-title">资产配置建议</div>
-                                <div class="recommendation-content">
-                                    基于当前宏观环境和各资产超买超卖状态，建议采取以下配置策略：
-                                    <ul class="recommendation-list">
-                                        <li><strong>增配：</strong>价值股（上证50）、信用债、黄金、工业金属 - 这些资产估值偏低或处于超卖状态，具备较好的配置价值</li>
-                                        <li><strong>减配：</strong>成长股（创业板指）- 短期涨幅较大，技术指标超买，建议获利了结或降低仓位</li>
-                                        <li><strong>观望：</strong>A股大盘、利率债、原油 - 维持中性配置，等待方向明确后再行调整</li>
-                                        <li><strong>风险提示：</strong>关注美联储货币政策转向时点、国内稳增长政策力度、地缘政治风险演化</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <p style="margin-top: 15px; color: #666; font-size: 14px;">
-                                <strong>轮动逻辑：</strong>当前处于"政策底"向"市场底"过渡阶段，建议从"高估值成长"向"低估值价值"轮动，同时增加黄金、工业金属等实物资产配置以对冲通胀风险。固收方面，利率债空间有限，信用债性价比更优。
-                            </p>
-
-                            <div class="timestamp">建议生成时间: 2024-03-15 14:33</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 用户追问 -->
-                <div class="message message-user">
-                    <div class="message-content">
-                        如果美联储在6月份开始降息，这个配置建议会有什么变化？
-                    </div>
-                </div>
-
-                <!-- AI 情景分析 -->
-                <div class="message message-ai">
-                    <div>
-                        <div class="ai-label">AI 宏观分析助手</div>
-                        <div class="message-content">
-                            <p><strong>情景分析：美联储6月降息场景下的资产配置调整</strong></p>
-
-                            <p style="margin-top: 12px;">如果美联储在6月份开始降息周期，全球流动性环境将出现边际改善，资产定价逻辑会发生显著变化：</p>
-
-                            <div class="asset-analysis">
-                                <strong style="display: block; margin-bottom: 12px; color: #1a1a1a;">🔄 配置调整建议</strong>
-
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">成长股 → 由"减配"转为"增配"</span>
-                                        <span class="asset-signal signal-oversold" style="background: #dcfce7; color: #16a34a;">转多</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        降息利好高估值成长股，流动性宽松提升风险偏好，科技、新能源等赛道将重获资金青睐。建议在降息预期升温前提前布局。
-                                    </div>
-                                </div>
-
-                                <div class="asset-card neutral">
-                                    <div class="asset-header">
-                                        <span class="asset-name">黄金 → 维持"增配"但逻辑改变</span>
-                                        <span class="asset-signal signal-neutral">持有</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        从"避险"转向"抗通胀+美元贬值"逻辑。降息周期中黄金通常表现强劲，建议维持甚至加大配置比例。
-                                    </div>
-                                </div>
-
-                                <div class="asset-card bearish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">利率债 → 由"观望"转为"减配"</span>
-                                        <span class="asset-signal signal-overbought" style="background: #fee2e2; color: #dc2626;">转空</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        降息周期末期债券价格已充分反映预期，继续持有面临久期风险。建议获利了结，转向收益率更高的资产。
-                                    </div>
-                                </div>
-
-                                <div class="asset-card bullish">
-                                    <div class="asset-header">
-                                        <span class="asset-name">工业金属 → 强化"增配"</span>
-                                        <span class="asset-signal signal-oversold" style="background: #dcfce7; color: #16a34a;">强烈看多</span>
-                                    </div>
-                                    <div class="asset-details">
-                                        降息刺激全球经济复苏预期，工业金属需求回暖。铜、铝等品种将受益于"降息+新能源需求"双重驱动。
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="recommendation" style="margin-top: 15px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left-color: #3b82f6;">
-                                <div class="recommendation-title" style="color: #1e40af;">
-                                    ⚡ 关键时点操作建议
-                                </div>
-                                <div class="recommendation-content" style="color: #1e3a8a;">
-                                    <ul class="recommendation-list">
-                                        <li><strong>4-5月（预期发酵期）：</strong>逐步减持价值股，增持成长股和黄金，提前布局降息交易</li>
-                                        <li><strong>6月（降息落地）：</strong>关注"买预期、卖事实"风险，适度获利了结，避免追高</li>
-                                        <li><strong>7-9月（降息周期中）：</strong>全面转向风险资产，重点配置成长股+工业金属+黄金组合</li>
-                                        <li><strong>风险对冲：</strong>保留10-15%的信用债仓位作为安全垫，应对降息不及预期的情况</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div class="timestamp">情景分析时间: 2024-03-15 14:36</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="chat-item">
+                <div class="chat-item-title">降息场景分析</div>
+                <div class="chat-item-desc">美联储降息对资产配置的影响</div>
+            </div>
+            <div class="chat-item">
+                <div class="chat-item-title">板块轮动趋势</div>
+                <div class="chat-item-desc">当前市场板块轮动情况</div>
             </div>
         </div>
     </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <h1>宏观资产轮动分析</h1>
+            <div class="subtitle">基于多因子模型分析跨资产类别配置</div>
+        </div>
+
+        <div class="messages-container">
+            <!-- 用户消息 -->
+            <div class="message user">
+                <div class="message-header">
+                    <div class="message-avatar">我</div>
+                    <div class="message-name">我</div>
+                    <div class="message-time">14:32</div>
+                </div>
+                <div class="message-content">
+                    请分析当前宏观环境下，股票、固收和大宗商品的配置建议，并判断各资产类别是否存在超买超卖现象
+                </div>
+            </div>
+
+            <!-- AI 回复 -->
+            <div class="message ai">
+                <div class="message-header">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-name">AI投研助手</div>
+                    <div class="message-time">14:32</div>
+                </div>
+                <div class="message-content">
+                    <p>好的，我将为您分析当前宏观环境下各主要资产类别的配置价值。让我从以下几个维度进行综合评估：</p>
+
+                    <div class="asset-analysis">
+                        <strong style="display: block; margin-bottom: 12px; color: #1a1a1a;">📊 主要资产类别分析</strong>
+
+                        <!-- A股市场 -->
+                        <div class="asset-card neutral">
+                            <div class="asset-header">
+                                <span class="asset-name">A股市场（沪深300）</span>
+                                <span class="asset-signal signal-neutral">中性</span>
+                            </div>
+                            <div class="asset-details">
+                                当前处于区间震荡，估值位于历史中位水平。政策底已现，但市场底尚需确认。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">PE分位</div>
+                                    <div class="metric-value">45%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">技术指标</div>
+                                    <div class="metric-value">RSI 52</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">资金流向</div>
+                                    <div class="metric-value">流出</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 成长股 -->
+                        <div class="asset-card bearish">
+                            <div class="asset-header">
+                                <span class="asset-name">成长股（创业板指）</span>
+                                <span class="asset-signal signal-overbought">超买</span>
+                            </div>
+                            <div class="asset-details">
+                                近期AI、半导体等科技板块涨幅较大，短期技术指标超买，存在回调风险。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">PE分位</div>
+                                    <div class="metric-value">78%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">技术指标</div>
+                                    <div class="metric-value">RSI 71</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">资金流向</div>
+                                    <div class="metric-value">流入放缓</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 价值股 -->
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">价值股（上证50）</span>
+                                <span class="asset-signal signal-oversold">超卖</span>
+                            </div>
+                            <div class="asset-details">
+                                银行、地产等传统板块估值处于历史低位，股息率具有吸引力，配置价值凸显。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">PE分位</div>
+                                    <div class="metric-value">18%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">技术指标</div>
+                                    <div class="metric-value">RSI 35</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">股息率</div>
+                                    <div class="metric-value">4.2%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 利率债 -->
+                        <div class="asset-card neutral">
+                            <div class="asset-header">
+                                <span class="asset-name">利率债（10年国债）</span>
+                                <span class="asset-signal signal-neutral">中性</span>
+                            </div>
+                            <div class="asset-details">
+                                收益率在2.3%-2.5%区间震荡，流动性合理充裕，但央行防止套利交易过热。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">当前收益率</div>
+                                    <div class="metric-value">2.38%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">历史分位</div>
+                                    <div class="metric-value">25%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">久期风险</div>
+                                    <div class="metric-value">低</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 信用债 -->
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">信用债（AA+企业债）</span>
+                                <span class="asset-signal signal-oversold">超卖</span>
+                            </div>
+                            <div class="asset-details">
+                                信用利差有所走阔，但优质企业偿债能力稳健，票息价值突出。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">信用利差</div>
+                                    <div class="metric-value">120BP</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">历史分位</div>
+                                    <div class="metric-value">68%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">票息</div>
+                                    <div class="metric-value">3.5%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 黄金 -->
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">黄金（AU9999）</span>
+                                <span class="asset-signal signal-oversold">超卖</span>
+                            </div>
+                            <div class="asset-details">
+                                美元走弱预期增强，地缘政治风险持续，黄金作为避险资产配置价值提升。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">当前价格</div>
+                                    <div class="metric-value">¥485/克</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">技术指标</div>
+                                    <div class="metric-value">RSI 38</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">央行增持</div>
+                                    <div class="metric-value">持续</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 原油 -->
+                        <div class="asset-card neutral">
+                            <div class="asset-header">
+                                <span class="asset-name">原油（布伦特）</span>
+                                <span class="asset-signal signal-neutral">中性</span>
+                            </div>
+                            <div class="asset-details">
+                                供需双弱格局，OPEC+减产与需求疲软形成对冲，价格维持区间震荡。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">当前价格</div>
+                                    <div class="metric-value">$82/桶</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">库存水平</div>
+                                    <div class="metric-value">中位</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">需求前景</div>
+                                    <div class="metric-value">谨慎</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 铜 -->
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">工业金属（铜）</span>
+                                <span class="asset-signal signal-oversold">超卖</span>
+                            </div>
+                            <div class="asset-details">
+                                新能源需求增长+供应偏紧，中长期看好。短期受地产拖累，但已进入配置窗口。
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric">
+                                    <div class="metric-label">LME价格</div>
+                                    <div class="metric-value">$8,450/吨</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">库存</div>
+                                    <div class="metric-value">低位</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">TC/RC</div>
+                                    <div class="metric-value">偏低</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"><span>分析总结</span></div>
+
+            <!-- AI 建议 -->
+            <div class="message ai">
+                <div class="message-header">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-name">AI投研助手</div>
+                    <div class="message-time">14:33</div>
+                </div>
+                <div class="message-content">
+                    <div class="recommendation">
+                        <div class="recommendation-title">资产配置建议</div>
+                        <div class="recommendation-content">
+                            基于当前宏观环境和各资产超买超卖状态，建议采取以下配置策略：
+                            <ul class="recommendation-list">
+                                <li><strong>增配：</strong>价值股（上证50）、信用债、黄金、工业金属 - 这些资产估值偏低或处于超卖状态，具备较好的配置价值</li>
+                                <li><strong>减配：</strong>成长股（创业板指）- 短期涨幅较大，技术指标超买，建议获利了结或降低仓位</li>
+                                <li><strong>观望：</strong>A股大盘、利率债、原油 - 维持中性配置，等待方向明确后再行调整</li>
+                                <li><strong>风险提示：</strong>关注美联储货币政策转向时点、国内稳增长政策力度、地缘政治风险演化</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                        <strong>轮动逻辑：</strong>当前处于"政策底"向"市场底"过渡阶段，建议从"高估值成长"向"低估值价值"轮动，同时增加黄金、工业金属等实物资产配置以对冲通胀风险。固收方面，利率债空间有限，信用债性价比更优。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 用户追问 -->
+            <div class="message user">
+                <div class="message-header">
+                    <div class="message-avatar">我</div>
+                    <div class="message-name">我</div>
+                    <div class="message-time">14:35</div>
+                </div>
+                <div class="message-content">
+                    如果美联储在6月份开始降息，这个配置建议会有什么变化？
+                </div>
+            </div>
+
+            <!-- AI 情景分析 -->
+            <div class="message ai">
+                <div class="message-header">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-name">AI投研助手</div>
+                    <div class="message-time">14:36</div>
+                </div>
+                <div class="message-content">
+                    <p><strong>情景分析：美联储6月降息场景下的资产配置调整</strong></p>
+
+                    <p style="margin-top: 12px;">如果美联储在6月份开始降息周期，全球流动性环境将出现边际改善，资产定价逻辑会发生显著变化：</p>
+
+                    <div class="asset-analysis">
+                        <strong style="display: block; margin-bottom: 12px; color: #1a1a1a;">🔄 配置调整建议</strong>
+
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">成长股 → 由"减配"转为"增配"</span>
+                                <span class="asset-signal signal-oversold" style="background: #dcfce7; color: #16a34a;">转多</span>
+                            </div>
+                            <div class="asset-details">
+                                降息利好高估值成长股，流动性宽松提升风险偏好，科技、新能源等赛道将重获资金青睐。建议在降息预期升温前提前布局。
+                            </div>
+                        </div>
+
+                        <div class="asset-card neutral">
+                            <div class="asset-header">
+                                <span class="asset-name">黄金 → 维持"增配"但逻辑改变</span>
+                                <span class="asset-signal signal-neutral">持有</span>
+                            </div>
+                            <div class="asset-details">
+                                从"避险"转向"抗通胀+美元贬值"逻辑。降息周期中黄金通常表现强劲，建议维持甚至加大配置比例。
+                            </div>
+                        </div>
+
+                        <div class="asset-card bearish">
+                            <div class="asset-header">
+                                <span class="asset-name">利率债 → 由"观望"转为"减配"</span>
+                                <span class="asset-signal signal-overbought" style="background: #fee2e2; color: #dc2626;">转空</span>
+                            </div>
+                            <div class="asset-details">
+                                降息周期末期债券价格已充分反映预期，继续持有面临久期风险。建议获利了结，转向收益率更高的资产。
+                            </div>
+                        </div>
+
+                        <div class="asset-card bullish">
+                            <div class="asset-header">
+                                <span class="asset-name">工业金属 → 强化"增配"</span>
+                                <span class="asset-signal signal-oversold" style="background: #dcfce7; color: #16a34a;">强烈看多</span>
+                            </div>
+                            <div class="asset-details">
+                                降息刺激全球经济复苏预期，工业金属需求回暖。铜、铝等品种将受益于"降息+新能源需求"双重驱动。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation" style="margin-top: 15px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left-color: #3b82f6;">
+                        <div class="recommendation-title" style="color: #1e40af;">
+                            ⚡ 关键时点操作建议
+                        </div>
+                        <div class="recommendation-content" style="color: #1e3a8a;">
+                            <ul class="recommendation-list">
+                                <li><strong>4-5月（预期发酵期）：</strong>逐步减持价值股，增持成长股和黄金，提前布局降息交易</li>
+                                <li><strong>6月（降息落地）：</strong>关注"买预期、卖事实"风险，适度获利了结，避免追高</li>
+                                <li><strong>7-9月（降息周期中）：</strong>全面转向风险资产，重点配置成长股+工业金属+黄金组合</li>
+                                <li><strong>风险对冲：</strong>保留10-15%的信用债仓位作为安全垫，应对降息不及预期的情况</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <textarea placeholder="输入您的问题..." rows="1"></textarea>
+                <button class="send-btn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.querySelector('textarea');
+        const sendBtn = document.querySelector('.send-btn');
+
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            sendBtn.disabled = this.value.trim() === '';
+        });
+
+        sendBtn.addEventListener('click', function() {
+            if (textarea.value.trim()) {
+                alert('演示模式：消息已发送');
+            }
+        });
+    </script>
 </body>
 </html>
